@@ -1,0 +1,111 @@
+{
+    "entries": [
+        {
+            "attributes": {
+                "cn": "Test User testuser",
+                "co": "United States",
+                "displayName": "Test User",
+                "distinguishedName": "CN=Test User testuser,OU=Users,OU=Computational Sciences,OU=Departments,OU=Bar_Harbor,DC=jax,DC=org",
+                "gecos": "Test User",
+                "givenName": "Test",
+                "lastLogonTimestamp": "2019-04-22 12:33:27.753269+00:00",
+                "mail": "test.user@jax.org",
+                "memberOf": [
+                    "CN=CGRP-bhcape01,OU=Groups,DC=jax,DC=org",
+                    "CN=O365-Faculty-A1-Base,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=BOX-JAX_All_Users,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-BH_HDrive_Migration,OU=Domain_Local,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-WebExUsers,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-AAD-IT-Pilot,OU=Groups,OU=Information Technology,OU=Departments,OU=Bar_Harbor,DC=jax,DC=org",
+                    "CN=VPN-2FA,OU=Domain_Global,OU=Groups,DC=jax,DC=org",
+                    "CN=Exchange 2013 Users,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=cs-all,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=cssa,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=ADM-StrictPasswords,OU=AD_Admin,OU=Groups,DC=jax,DC=org",
+                    "CN=FASPEX-USERS,OU=Unix,OU=Groups,DC=jax,DC=org",
+                    "CN=CGRP-donkey,OU=Unix,OU=Groups,DC=jax,DC=org",
+                    "CN=cssc,OU=Distribution Groups,OU=Groups,DC=jax,DC=org"
+                ],
+                "name": "Test User testuser",
+                "objectCategory": "CN=Person,CN=Schema,CN=Configuration,DC=jax,DC=org",
+                "objectClass": [
+                    "top",
+                    "person",
+                    "organizationalPerson",
+                    "user"
+                ],
+                "sAMAccountName": "testuser",
+                "sn": "User",
+                "userPrincipalName": "test.usery@jax.org",
+                "userPassword": "pa55word"
+            },
+            "dn": "CN=Test User testuser,OU=Users,OU=Computational Sciences,OU=Departments,OU=Bar_Harbor,DC=jax,DC=org",
+            "raw": {
+                "cn": [
+                    "Test User testuser"
+                ],
+                "co": [
+                    "United States"
+                ],
+                "displayName": [
+                    "Test User"
+                ],
+                "distinguishedName": [
+                    "CN=Test User testuser,OU=Users,OU=Computational Sciences,OU=Departments,OU=Bar_Harbor,DC=jax,DC=org"
+                ],
+                "gecos": [
+                    "Test User"
+                ],
+                "givenName": [
+                    "Test"
+                ],
+                "lastLogonTimestamp": [
+                    "132004100077532682"
+                ],
+                "mail": [
+                    "Test.User@jax.org"
+                ],
+                "memberOf": [
+                    "CN=CGRP-bhcape01,OU=Groups,DC=jax,DC=org",
+                    "CN=O365-Faculty-A1-Base,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=BOX-JAX_All_Users,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-BH_HDrive_Migration,OU=Domain_Local,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-WebExUsers,OU=Microsoft,OU=Cloud,OU=Groups,DC=jax,DC=org",
+                    "CN=GRP-AAD-IT-Pilot,OU=Groups,OU=Information Technology,OU=Departments,OU=Bar_Harbor,DC=jax,DC=org",
+                    "CN=VPN-2FA,OU=Domain_Global,OU=Groups,DC=jax,DC=org",
+                    "CN=Exchange 2013 Users,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=cs-all,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=cssa,OU=Distribution Groups,OU=Groups,DC=jax,DC=org",
+                    "CN=ADM-StrictPasswords,OU=AD_Admin,OU=Groups,DC=jax,DC=org",
+                    "CN=FASPEX-USERS,OU=Unix,OU=Groups,DC=jax,DC=org",
+                    "CN=CGRP-donkey,OU=Unix,OU=Groups,DC=jax,DC=org",
+                    "CN=cssc,OU=Distribution Groups,OU=Groups,DC=jax,DC=org"
+                ],
+                "name": [
+                    "Test User testuser"
+                ],
+                "objectCategory": [
+                    "CN=Person,CN=Schema,CN=Configuration,DC=jax,DC=org"
+                ],
+                "objectClass": [
+                    "top",
+                    "person",
+                    "organizationalPerson",
+                    "user"
+                ],
+                "sAMAccountName": [
+                    "testuser"
+                ],
+                "sn": [
+                    "User"
+                ],
+                "userPrincipalName": [
+                    "test.user@jax.org"
+                ],
+                "userPassword": [
+                    "pa55word"
+                ]
+            }
+        }
+    ]
+}

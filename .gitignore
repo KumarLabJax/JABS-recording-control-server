@@ -1,0 +1,16 @@
+*.py[cod]
+*.log
+.Rproj.user
+.idea*
+.RData
+.Rhistory
+*.Rproj
+.ipynb_checkpoints/
+*.env
+venv*
+__pycache__
+*.db
+migrations/*
+ltm_control_service.config
+deploy/*
+!deploy/example*
