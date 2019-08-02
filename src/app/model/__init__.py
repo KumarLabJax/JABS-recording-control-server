@@ -7,6 +7,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from flask_marshmallow import Marshmallow
 
+from src.utils.exceptions import LTMSControlServiceException
+
 MA = Marshmallow()
 
 BASE = declarative_base()
@@ -14,6 +16,14 @@ SESSION_FACTORY = sessionmaker(autoflush=False,
                                autocommit=False)
 SESSION = scoped_session(SESSION_FACTORY)
 BASE.query = SESSION.query_property()
+
+
+class LTMSDatabaseException(LTMSControlServiceException):
+    """ Base exception class for exceptions defined in the model module """
+
+
+# this needs to be imported after the BASE/SESSION and exceptions are setup
+from .device_model import Device  # pylint: disable=g-import-not-at-top
 
 
 def init_db(app):
@@ -25,7 +35,8 @@ def init_db(app):
     :param app: The flask app returned from app_factory
     :return: sqlalchemy engine, just in case you want it
     """
-    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'],
+                           )
     SESSION_FACTORY.configure(bind=engine)
     create_all(engine)
     return engine
@@ -47,3 +58,13 @@ def drop_all(engine):
     :return:
     """
     BASE.metadata.drop_all(engine)
+
+
+def add_object(db_object):
+    try:
+        SESSION.add(db_object)
+        SESSION.commit()
+    except:
+        SESSION.rollback()
+        #TODO raise custom exception
+        raise Exception("Error creating object")

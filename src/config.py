@@ -89,6 +89,13 @@ class DevelopmentConfig(Config):
                               os.path.join(BASEDIR,
                                            'ltmcs.dev.sqlite.db')
 
+    #SQLALCHEMY_DATABASE_URI = f"{_CFG.get('DATABASE', 'DIALECT')}://" \
+    #                          f"{_CFG.get('DATABASE', 'USERNAME')}:" \
+    #                          f"{_CFG.get('DATABASE', 'PASSWORD')}@" \
+    #                          f"{_CFG.get('DATABASE', 'HOST')}:" \
+    #                          f"{_CFG.get('DATABASE', 'PORT')}/" \
+    #                          f"{_CFG.get('DATABASE', 'DATABASE')}"
+
 
 class TestingConfig(Config):
     """ Testing Specific Config """
@@ -108,18 +115,13 @@ class ProductionConfig(Config):
     ENV = 'Production'
     DEBUG = False
     LOG_LEVEL = 'ERROR'
-    # TODO: Use a production quality database in production
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + \
-                              os.path.join(BASEDIR,
-                                           'ltmcs.test.sqlite.db')
 
-    # TODO: Uncomment when using production. Valid credentials required for proper use
-    # SQLALCHEMY_DATABASE_URI = f"{_CFG.get('DATABASE', 'DIALECT')}://" \
-    #     f"{_CFG.get('DATABASE', 'USERNAME')}:" \
-    #     f"{_CFG.get('DATABASE', 'PASSWORD')}@" \
-    #     f"{_CFG.get('DATABASE', 'HOST')}:" \
-    #     f"{_CFG.get('DATABASE', 'PORT')}/" \
-    #     f"{_CFG.get('DATABASE', 'DATABASE')}"
+    SQLALCHEMY_DATABASE_URI = f"{_CFG.get('DATABASE', 'DIALECT')}://" \
+         f"{_CFG.get('DATABASE', 'USERNAME')}:" \
+         f"{_CFG.get('DATABASE', 'PASSWORD')}@" \
+         f"{_CFG.get('DATABASE', 'HOST')}:" \
+         f"{_CFG.get('DATABASE', 'PORT')}/" \
+         f"{_CFG.get('DATABASE', 'DATABASE')}"
 
 DEFAULT_CONFIG = DevelopmentConfig # pylint: disable=C0103
 
