@@ -3,13 +3,13 @@
 import unittest
 from datetime import datetime
 
-from src.test import BaseTestCase
+from src.test import BaseDBTestCase
 from src.utils.logging import get_module_logger
 
 LOGGER = get_module_logger()
 
 
-class TestHeartbeat(BaseTestCase):
+class TestHeartbeat(BaseDBTestCase):
 
     def test_heartbeat(self):
         """
