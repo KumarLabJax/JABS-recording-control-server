@@ -116,18 +116,28 @@ class TestDevice(BaseDBTestCase):
 
     def test_device_list_bad_state(self):
         """
-            test the device endpoint filtering by state
+        test the device endpoint filtering by state
         """
         response = self.client.get(self.__endpoint,
                                    query_string={'state': 'THIS_IS_BAD'})
         self.assert400(response)
 
     def test_device_by_id(self):
+        """
+        test endpoint to get device by ID
+        """
         response = self.client.get(self.__endpoint + '/1')
         self.assert200(response)
         data = response.json
         self.assertEqual(data['id'], 1)
         self.assertEqual(data['name'], 'TEST-DEVICE1')
+
+    def test_device_bad_id(self):
+        """
+        test endpoint to get device by ID, passing unknown ID
+        """
+        response = self.client.get(self.__endpoint + '/1234')
+        self.assert404(response)
 
 
 if __name__ == '__main__':
