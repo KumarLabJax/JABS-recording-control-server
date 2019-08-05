@@ -1,4 +1,4 @@
-from flask_restplus import fields, Model
+from flask_restplus import fields
 from .device import DEVICE_BASE_SCHEMA
 
 __all__ = ['HEARTBEAT_SCHEMA']

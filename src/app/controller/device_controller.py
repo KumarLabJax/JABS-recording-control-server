@@ -20,6 +20,7 @@ NS = add_models_to_namespace(NS, models)
 class DeviceHeartbeat(Resource):
     """ Endpoint for device heartbeats """
 
+    @NS.response(204, "success, no command")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
     def post(self):
         data = NS.payload
@@ -37,6 +38,8 @@ class DeviceHeartbeat(Resource):
             total_disk=data['system_info']['total_disk'],
             free_disk=data['system_info']['free_disk']
         )
+
+        return '', 204
 
 
 @NS.route('/')

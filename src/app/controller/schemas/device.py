@@ -44,9 +44,15 @@ SYSINFO_SCHEMA = Model('sysinfo', {
 })
 
 CAMERA_STATUS = Model('camera_status', {
-    'recording': fields.Boolean,
-    'duration': fields.Integer,
-    'fps': fields.Integer
+    'recording': fields.Boolean(
+        description="Boolean indicating if the device is recording video"
+    ),
+    'duration': fields.Integer(
+        description="if the camera is recording, this value indicates the length of the recording session in seconds"
+    ),
+    'fps': fields.Integer(
+        escription="If the camera is recording, this value indcates how many frames per second are being captured"
+    )
 })
 
 SENSOR_STATUS = Model('sensor_status', {

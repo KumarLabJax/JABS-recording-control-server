@@ -17,7 +17,7 @@ class TestHeartbeat(BaseDBTestCase):
         """
         payload = {
             'timestamp': datetime.utcnow().isoformat(),
-            'name': "LEG-BH004",
+            'name': "TEST-DEVICE",
             'state': "IDLE",
             'sensor_status': {
                 'camera': {
@@ -39,7 +39,7 @@ class TestHeartbeat(BaseDBTestCase):
         }
 
         response = self.client.post('/api/device/heartbeat', json=payload)
-        self.assert200(response)
+        self.assertStatus(response, 204)
 
 
 if __name__ == '__main__':
