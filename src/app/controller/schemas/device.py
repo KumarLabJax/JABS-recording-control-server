@@ -66,13 +66,7 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
     ),
     'state': fields.String(enum=['IDLE', 'BUSY'], required=True,
                            description="Device State. BUSY (currently performing a task, e.g. recording) or IDLE"),
-    'sensor_status': fields.Nested(SENSOR_STATUS, required=True,),
-    'system_info': fields.Nested(SYSINFO_SCHEMA, required=True,)
-})
-
-DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
-    'id': fields.Integer(required=True),
-    'last_update': fields.DateTime(required=True),
+    'sensor_status': fields.Nested(SENSOR_STATUS, required=True),
     'system_info': fields.Nested(SYSINFO_SCHEMA, required=True,
                                  attribute=lambda d: {
                                      'uptime': d.uptime,
@@ -84,4 +78,10 @@ DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
                                      'free_disk': d.free_disk,
                                      'total_disk': d.total_disk
                                  })
+})
+
+DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
+    'id': fields.Integer(required=True),
+    'last_update': fields.DateTime(required=True),
+
 })
