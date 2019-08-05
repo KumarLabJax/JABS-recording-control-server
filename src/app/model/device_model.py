@@ -110,8 +110,18 @@ class Device(UniqueMixin, BASE):
             raise LTMSDatabaseException(f"Unable to update device {name}")
 
     @classmethod
-    def all_devices(cls):
-        return SESSION.query(cls).all()
+    def get_devices(cls, state=None):
+
+        q = SESSION.query(cls)
+
+        if state is not None:
+            q = q.filter(cls.state == state)
+
+        return q.all()
+
+    @classmethod
+    def get_by_id(cls, device_id):
+        return SESSION.query(cls).get(device_id)
 
 
 class DeviceSchema(MA.ModelSchema):

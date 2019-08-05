@@ -42,12 +42,35 @@ class DeviceHeartbeat(Resource):
         return '', 204
 
 
-@NS.route('/')
-class Device(Resource):
+@NS.route('')
+class DeviceList(Resource):
 
+    get_parser = reqparse.RequestParser()
+    get_parser.add_argument('state', location='args',
+                            choices=[s.name for s in model.Device.State],
+                            help="Only return devices with this state.")
+
+    @NS.expect(get_parser, validate=True)
     @NS.marshal_with(DEVICE_SCHEMA, as_list=True)
     def get(self):
         """
         get device(s)
         """
-        return model.Device.all_devices()
+        args = self.get_parser.parse_args(strict=True)
+        params = {}
+
+        if args['state'] is not None:
+            params['state'] = model.Device.State[args.state]
+
+        return model.Device.get_devices(**params)
+
+
+@NS.route('/<int:device_id>')
+class ByID(Resource):
+
+    @NS.response(404, "Device not found")
+    @NS.marshal_with(DEVICE_SCHEMA)
+    def get(self, device_id):
+        device = model.Device.get_by_id(device_id)
+
+        return device if device else abort(404, f"Device {device_id} Not Found")
