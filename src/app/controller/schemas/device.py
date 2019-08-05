@@ -51,7 +51,7 @@ CAMERA_STATUS = Model('camera_status', {
         description="if the camera is recording, this value indicates the length of the recording session in seconds"
     ),
     'fps': fields.Float(
-        escription="If the camera is recording, this value indcates how many frames per second are being captured"
+        description="If the camera is recording, this value indcates how many frames per second are being captured"
     )
 })
 
