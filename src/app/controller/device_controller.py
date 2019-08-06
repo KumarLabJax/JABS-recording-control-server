@@ -24,10 +24,16 @@ class DeviceHeartbeat(Resource):
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
     def post(self):
         data = NS.payload
+
+        try:
+            timestamp = dateutil.parser.parse(data['timestamp'])
+        except ValueError:
+            abort(400, f"unable to parse timestamp: {data['timestamp']}")
+
         model.Device.update_from_heartbeat(
             name=data['name'],
             state=model.Device.State[data['state']],
-            last_update=dateutil.parser.parse(data['timestamp']),
+            last_update=timestamp,  # pylint: disable=E0601
             uptime=data['system_info']['uptime'],
             total_ram=data['system_info']['total_ram'],
             free_ram=data['system_info']['free_ram'],
