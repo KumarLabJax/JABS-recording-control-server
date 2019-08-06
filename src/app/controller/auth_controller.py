@@ -39,8 +39,8 @@ class UserLogin(Resource):
         #
         try:
             authenticate_user(args['username'], args['password'])
-        except InvalidCredentials as e:
-            abort(401, message=str(e))
+        except InvalidCredentials as err:
+            abort(401, message=str(err))
 
         identity = {
             'username': args['username'],

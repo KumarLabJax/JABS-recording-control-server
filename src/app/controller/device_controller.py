@@ -1,6 +1,10 @@
+"""
+controller for interacting with devices through the API
+"""
 import dateutil.parser
-from flask_restplus import Resource, Namespace, reqparse, fields, abort
-from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, SENSOR_STATUS, CAMERA_STATUS, add_models_to_namespace
+from flask_restplus import Resource, Namespace, reqparse, abort
+from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
+    SENSOR_STATUS, CAMERA_STATUS, add_models_to_namespace
 import json
 import src.app.model as model
 
@@ -18,7 +22,9 @@ NS = add_models_to_namespace(NS, models)
 
 @NS.route('/heartbeat')
 class DeviceHeartbeat(Resource):
-    """ Endpoint for device heartbeats """
+    """
+    Endpoint for device heartbeats
+    """
 
     @NS.response(204, "success, no command")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
@@ -44,6 +50,9 @@ class DeviceHeartbeat(Resource):
 
 @NS.route('')
 class DeviceList(Resource):
+    """
+    Endpoint for interacting with lists of Devices
+    """
 
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('state', location='args',
@@ -67,10 +76,16 @@ class DeviceList(Resource):
 
 @NS.route('/<int:device_id>')
 class ByID(Resource):
+    """
+    endpoint for getting a specific device by ID
+    """
 
     @NS.response(404, "Device not found")
     @NS.marshal_with(DEVICE_SCHEMA)
     def get(self, device_id):
+        """
+        get a Device by ID
+        """
         device = model.Device.get_by_id(device_id)
 
         return device if device else abort(404, f"Device {device_id} Not Found")
