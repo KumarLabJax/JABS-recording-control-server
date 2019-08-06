@@ -111,16 +111,15 @@ class Device(UniqueMixin, BASE):
 
     @classmethod
     def get_devices(cls, state=None):
-
-        q = SESSION.query(cls)
-
+        """ get list of devices, optionally filter by device state """
+        query = SESSION.query(cls)
         if state is not None:
-            q = q.filter(cls.state == state)
-
-        return q.all()
+            query = query.filter(cls.state == state)
+        return query.all()
 
     @classmethod
     def get_by_id(cls, device_id):
+        """ get a device by its ID """
         return SESSION.query(cls).get(device_id)
 
 
