@@ -22,9 +22,7 @@ NS = add_models_to_namespace(NS, models)
 
 @NS.route('/heartbeat')
 class DeviceHeartbeat(Resource):
-    """
-    Endpoint for device heartbeats
-    """
+    """ Endpoint for device heartbeats """
 
     @NS.response(204, "success, no command")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
@@ -50,9 +48,7 @@ class DeviceHeartbeat(Resource):
 
 @NS.route('')
 class DeviceList(Resource):
-    """
-    Endpoint for interacting with lists of Devices
-    """
+    """ Endpoint for interacting with lists of Devices """
 
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('state', location='args',
@@ -62,9 +58,7 @@ class DeviceList(Resource):
     @NS.expect(get_parser, validate=True)
     @NS.marshal_with(DEVICE_SCHEMA, as_list=True)
     def get(self):
-        """
-        get device(s)
-        """
+        """ get device(s) """
         args = self.get_parser.parse_args(strict=True)
         params = {}
 
@@ -76,16 +70,12 @@ class DeviceList(Resource):
 
 @NS.route('/<int:device_id>')
 class ByID(Resource):
-    """
-    endpoint for getting a specific device by ID
-    """
+    """ endpoint for getting a specific device by ID """
 
     @NS.response(404, "Device not found")
     @NS.marshal_with(DEVICE_SCHEMA)
     def get(self, device_id):
-        """
-        get a Device by ID
-        """
+        """ get a Device by ID """
         device = model.Device.get_by_id(device_id)
 
         return device if device else abort(404, f"Device {device_id} Not Found")
