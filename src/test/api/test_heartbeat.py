@@ -67,7 +67,7 @@ class TestHeartbeat(BaseDBTestCase):
         response = self.client.post('/api/device/heartbeat', json=payload)
         self.assertStatus(response, 400)
 
-    #TODO for completeness we should have test for all required fields
+    # TODO for completeness we should have test for all required fields
     def test_heartbeat_missing_required_field(self):
         """ test heartbeat endpoint missing a required field (name) """
         payload = {
@@ -131,7 +131,7 @@ class TestHeartbeat(BaseDBTestCase):
             'timestamp': datetime.utcnow().isoformat(),
             'name': "TEST_DEVICE",
             'state': "IDLE",
-            'sensor_status': "{{{ INVALID",
+            'sensor_status': {'foo': "INVALID"},
             'system_info': {
                 "uptime": 128324,
                 "load_1min": 0.66,
