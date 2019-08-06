@@ -1,10 +1,10 @@
 import enum
-from datetime import datetime
 import pytz
+from sqlalchemy import Column, BigInteger, String, Integer, Float, Enum, \
+    TIMESTAMP, func, JSON
+from sqlalchemy.exc import SQLAlchemyError
 
 from . import BASE, MA, SESSION
-from sqlalchemy import Column, BigInteger, String, Integer, Float, Boolean, Date, ARRAY, Index, Enum, TIMESTAMP, func, JSON
-from sqlalchemy.exc import SQLAlchemyError
 from .utils.unique import UniqueMixin
 from . import LTMSDatabaseException
 

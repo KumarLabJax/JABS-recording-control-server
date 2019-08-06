@@ -5,6 +5,7 @@ Starts the dev server
 from flask_script import Command, Option
 from .utils import start_subprocess_and_wait
 
+
 class StartCeleryWorkersCommand(Command):
     """
     Start the celery worker(s)

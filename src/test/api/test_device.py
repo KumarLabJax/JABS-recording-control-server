@@ -74,18 +74,17 @@ class TestDevice(BaseDBTestCase):
         """
         response = self.client.get(self.__endpoint)
         self.assert200(response)
-        data = response.json
-        self.assertEqual(len(data), 2)
+        self.assertTrue(len(response.json) == 2)
 
     def test_device_list_by_state(self):
         """
-            test the device endpoint filtering by state
+        test the device endpoint filtering by state
         """
         response = self.client.get(self.__endpoint,
                                    query_string={'state': 'IDLE'})
         self.assert200(response)
         data = response.json
-        self.assertEqual(len(data), 1)
+        self.assertTrue(len(data) == 1)
         self.assertEqual(data[0]['name'], "TEST-DEVICE1")
 
     def test_device_list_bad_state(self):

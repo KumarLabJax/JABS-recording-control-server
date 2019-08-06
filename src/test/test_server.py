@@ -2,7 +2,6 @@
 
 import unittest
 import requests
-from flask import url_for
 
 from src.test import BaseLiveServerTestCase
 

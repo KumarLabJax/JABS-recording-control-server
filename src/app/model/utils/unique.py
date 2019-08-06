@@ -7,9 +7,9 @@ def _unique(cls, queryfunc, constructor, arg, kw):
      one already exists in the database it is returned, otherwise one is created
     """
     with SESSION.no_autoflush:
-        q = SESSION.query(cls)
-        q = queryfunc(q, *arg, **kw)
-        obj = q.first()
+        query = SESSION.query(cls)
+        query = queryfunc(query, *arg, **kw)
+        obj = query.first()
         if not obj:
             obj = constructor(*arg, **kw)
             SESSION.add(obj)
@@ -22,18 +22,16 @@ class UniqueMixin(object):
     this lets us select an object that matches the filter or create and return
     one if it doesn't already exist.
 
-    this is used for the Factor and CellLine which are basically lists of
-    controlled vocabulary terms
     """
     @classmethod
     def unique_filter(cls, query, *arg, **kw):
+        """ models must implement this method to find a matching object """
         raise NotImplementedError()
 
     @classmethod
     def as_unique(cls, *arg, **kw):
-        return _unique(
-                    cls,
-                    cls.unique_filter,
-                    cls,
-                    arg, kw
-               )
+        """
+        method to select or create and return an object using the unique
+        Mixin
+        """
+        return _unique(cls, cls.unique_filter, cls, arg, kw)
