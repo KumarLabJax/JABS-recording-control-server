@@ -2,6 +2,7 @@
 JWT Utilities.
 """
 
+
 def add_claims_to_jwt(identity):
     """
 

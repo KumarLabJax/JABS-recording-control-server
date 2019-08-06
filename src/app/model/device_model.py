@@ -10,7 +10,7 @@ from . import LTMSDatabaseException
 
 
 class Device(UniqueMixin, BASE):
-
+    """ model representing a data acquisition device """
     __tablename__ = 'device'
 
     class State(enum.Enum):
@@ -50,7 +50,7 @@ class Device(UniqueMixin, BASE):
             return "Unknown"
 
     @classmethod
-    def unique_filter(cls, query, name):
+    def unique_filter(cls, query, name):  # pylint: disable=W0222
         """
         used for the UniqueMixin, so we can select a device by name and
         automatically create a new one if it does not exist
