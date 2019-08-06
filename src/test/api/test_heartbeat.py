@@ -123,6 +123,29 @@ class TestHeartbeat(BaseDBTestCase):
         response = self.client.post('/api/device/heartbeat', json=payload)
         self.assertStatus(response, 400)
 
+    def test_heartbeat_bad_sensor_status(self):
+        """
+        test heartbeat endpoint with a bad datetime format (not ISO 8601)
+        """
+        payload = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'name': "TEST_DEVICE",
+            'state': "IDLE",
+            'sensor_status': "{{{ INVALID",
+            'system_info': {
+                "uptime": 128324,
+                "load_1min": 0.66,
+                "load_5min": 0.23,
+                "load_15min": 0.12,
+                "total_ram": 8388608,
+                "free_ram": 7759462,
+                "free_disk": 1258291,
+                "total_disk": 2000000
+            }
+        }
+        response = self.client.post('/api/device/heartbeat', json=payload)
+        self.assertStatus(response, 400)
+
 
 if __name__ == '__main__':
     unittest.main()

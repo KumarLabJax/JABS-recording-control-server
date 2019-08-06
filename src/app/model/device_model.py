@@ -84,9 +84,7 @@ class Device(UniqueMixin, BASE):
         "heartbeat" message
         """
         name = kwargs.pop('name')
-
         device = Device.as_unique(name=name)
-
         heartbeat_timestamp = Device.__add_tz(kwargs.pop('last_update'))
 
         if device.last_update is not None:
