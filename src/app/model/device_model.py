@@ -7,6 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
 from . import LTMSDatabaseException
+from src.utils.logging import get_module_logger
+
+LOGGER = get_module_logger()
 
 
 class Device(UniqueMixin, BASE):
@@ -96,7 +99,11 @@ class Device(UniqueMixin, BASE):
                 # should probably just get rid of the timestamp in the heartbeat
                 # payload and just let the database update the last_update
                 # column automatically
-                print("time skew")
+                LOGGER.warning(
+                    "time skew detected: heartbeat has timestamp "
+                    f"{heartbeat_timestamp.isoformat()} but last update was "
+                    f"{last_update.isoformat()}"
+                )
 
         device.last_update = heartbeat_timestamp
         for attr in kwargs:
@@ -119,6 +126,11 @@ class Device(UniqueMixin, BASE):
     def get_by_id(cls, device_id):
         """ get a device by its ID """
         return SESSION.query(cls).get(device_id)
+
+    @classmethod
+    def get_by_name(cls, name):
+        """ get a device by its name """
+        return SESSION.query(cls).filter(cls.name == name).one_or_none()
 
 
 class DeviceSchema(MA.ModelSchema):

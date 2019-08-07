@@ -99,7 +99,7 @@ class TestHeartbeat(BaseDBTestCase):
         test heartbeat endpoint with a bad datetime format (not ISO 8601)
         """
         payload = {
-            'timestamp': datetime.utcnow().strftime('%A %B %d %Y bad 1234 format'),
+            'timestamp': "not a valid timestamp",
             'name': "TEST_DEVICE",
             'state': "IDLE",
             'sensor_status': {
