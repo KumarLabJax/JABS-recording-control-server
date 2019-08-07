@@ -45,18 +45,25 @@ SYSINFO_SCHEMA = Model('sysinfo', {
 
 CAMERA_STATUS = Model('camera_status', {
     'recording': fields.Boolean(
-        description="Boolean indicating if the device is recording video"
+        description="Boolean indicating if the device is recording video",
+        required=True
     ),
     'duration': fields.Integer(
-        description="if the camera is recording, this value indicates the length of the recording session in seconds"
+        description=(
+            "if the camera is recording, this value indicates the length of "
+            "the recording session in seconds"
+        )
     ),
     'fps': fields.Float(
-        description="If the camera is recording, this value indcates how many frames per second are being captured"
+        description=(
+            "If the camera is recording, this value indcates how many frames "
+            "per second are being captured"
+        )
     )
 })
 
 SENSOR_STATUS = Model('sensor_status', {
-    'camera': fields.Nested(CAMERA_STATUS)
+    'camera': fields.Nested(CAMERA_STATUS, required=True)
 })
 
 DEVICE_BASE_SCHEMA = Model('device_base', {
@@ -65,7 +72,10 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
         description="name of the device sending the heartbeat"
     ),
     'state': fields.String(enum=['IDLE', 'BUSY'], required=True,
-                           description="Device State. BUSY (currently performing a task, e.g. recording) or IDLE"),
+                           description=(
+                               "Device State. BUSY (currently performing a "
+                               "task, e.g. recording) or IDLE")
+                           ),
     'sensor_status': fields.Nested(SENSOR_STATUS, required=True),
     'system_info': fields.Nested(SYSINFO_SCHEMA, required=True,
                                  attribute=lambda d: {
