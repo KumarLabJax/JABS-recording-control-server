@@ -63,7 +63,7 @@ class DeviceFaker(object):
                 }
             },
             'system_info': {
-                "uptime": faker.random_int(min=4000, max=1000000),
+                "uptime": random.randint(4000, 1000000),
                 "total_ram": 8388608,
                 "total_disk": 2000000
             }
@@ -75,9 +75,13 @@ class DeviceFaker(object):
         generate a fake heartbeat message using random data for the
         non-fixed values
         """
-        device['timestamp'] = faker.date_time_between(start_date="now",
-                                                      end_date="+5s",
-                                                      tzinfo=pytz.utc).isoformat()
+
+        # add a little jitter into the time stamp for this heartbeat message so
+        # we have some variation in the timestamp
+        timestamp = faker.date_time_between(start_date="-5s",
+                                            end_date="now",
+                                            tzinfo=pytz.utc)
+        device['timestamp'] = timestamp.isoformat()
 
         sysinfo = device['system_info']
 
