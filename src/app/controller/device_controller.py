@@ -38,9 +38,7 @@ class DeviceHeartbeat(Resource):
                 uptime=data['system_info']['uptime'],
                 total_ram=data['system_info']['total_ram'],
                 free_ram=data['system_info']['free_ram'],
-                load_1min=data['system_info']['load_1min'],
-                load_5min=data['system_info']['load_5min'],
-                load_15min=data['system_info']['load_15min'],
+                load=data['system_info']['load'],
                 sensor_status=json.dumps(data['sensor_status']),
                 total_disk=data['system_info']['total_disk'],
                 free_disk=data['system_info']['free_disk']
