@@ -81,12 +81,8 @@ class DeviceFaker(object):
 
         sysinfo = device['system_info']
 
-        # generate a random floating point number for the 1 minute load.
-        # 5 minute load is generated from 1 minute load
-        # 15 minute load is generated from the 5 minute load
-        sysinfo['load_1min'] = random.uniform(0, 4)
-        sysinfo['load_5min'] = sysinfo['load_1min'] * random.uniform(0.8, 1.2)
-        sysinfo['load_15min'] = sysinfo['load_5min'] * random.uniform(0.8, 1.2)
+        # generate a random floating point number for the load
+        sysinfo['load'] = random.uniform(0, 4)
 
         # increment the uptime by the time_delta to get the new uptime
         sysinfo['uptime'] += time_delta
