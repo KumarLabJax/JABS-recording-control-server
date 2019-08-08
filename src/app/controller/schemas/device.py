@@ -1,4 +1,5 @@
 from flask_restplus import fields, Model
+import json
 
 __all__ = [
     'SYSINFO_SCHEMA',
@@ -76,7 +77,9 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
                                "Device State. BUSY (currently performing a "
                                "task, e.g. recording) or IDLE")
                            ),
-    'sensor_status': fields.Nested(SENSOR_STATUS, required=True),
+    'sensor_status': fields.Nested(SENSOR_STATUS, required=True,
+                                   attribute=lambda d: json.loads(
+                                       d.sensor_status)),
     'system_info': fields.Nested(SYSINFO_SCHEMA, required=True,
                                  attribute=lambda d: {
                                      'uptime': d.uptime,
