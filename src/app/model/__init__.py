@@ -35,8 +35,7 @@ def init_db(app):
     :param app: The flask app returned from app_factory
     :return: sqlalchemy engine, just in case you want it
     """
-    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'],
-                           )
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
     SESSION_FACTORY.configure(bind=engine)
     create_all(engine)
     return engine
@@ -66,5 +65,5 @@ def add_object(db_object):
         SESSION.commit()
     except:
         SESSION.rollback()
-        #TODO raise custom exception
+        # TODO raise custom exception
         raise Exception("Error creating object")
