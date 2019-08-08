@@ -89,13 +89,6 @@ class DevelopmentConfig(Config):
                               os.path.join(BASEDIR,
                                            'ltmcs.dev.sqlite.db')
 
-    #SQLALCHEMY_DATABASE_URI = f"{_CFG.get('DATABASE', 'DIALECT')}://" \
-    #                          f"{_CFG.get('DATABASE', 'USERNAME')}:" \
-    #                          f"{_CFG.get('DATABASE', 'PASSWORD')}@" \
-    #                          f"{_CFG.get('DATABASE', 'HOST')}:" \
-    #                          f"{_CFG.get('DATABASE', 'PORT')}/" \
-    #                          f"{_CFG.get('DATABASE', 'DATABASE')}"
-
 
 class TestingConfig(Config):
     """ Testing Specific Config """
@@ -123,7 +116,8 @@ class ProductionConfig(Config):
          f"{_CFG.get('DATABASE', 'PORT')}/" \
          f"{_CFG.get('DATABASE', 'DATABASE')}"
 
-DEFAULT_CONFIG = DevelopmentConfig # pylint: disable=C0103
+
+DEFAULT_CONFIG = DevelopmentConfig  # pylint: disable=C0103
 
 CONFIG_BY_NAME = dict(
     dev=DevelopmentConfig,

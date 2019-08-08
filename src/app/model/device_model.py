@@ -20,21 +20,38 @@ class Device(UniqueMixin, BASE):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, index=True, unique=True)
+
+    # state of device (see State enum above for valid states)
     state = Column(Enum(State), nullable=False)
+
+    # timestamp of last update message from this device
     last_update = Column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
         onupdate=func.current_timestamp(),
         nullable=False
     )
-    load_1min = Column(Float, default=0.0)
-    load_5min = Column(Float, default=0.0)
-    load_15min = Column(Float, default=0.0)
+
+    # host information
+    # system load
+    load = Column(Float, default=0.0)
+
+    # total physical memory in kilobytes
     total_ram = Column(BigInteger)
+
+    # amount of free memory in kilobytes
     free_ram = Column(BigInteger)
+
+    # system uptime in seconds
     uptime = Column(BigInteger)
+
+    # free disk space in megabytes
     free_disk = Column(BigInteger)
+
+    # total disk space in megabytes
     total_disk = Column(BigInteger)
+
+    # JSON encoded sensor status
     sensor_status = Column(JSON)
 
     def state_to_str(self):
@@ -45,7 +62,7 @@ class Device(UniqueMixin, BASE):
             self.State.DOWN: "Down"
         }
         try:
-            return state_strings[self.status]
+            return state_strings[self.state]
         except KeyError:
             return "Unknown"
 

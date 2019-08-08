@@ -13,17 +13,9 @@ SYSINFO_SCHEMA = Model('sysinfo', {
         required=True,
         description="system uptime in seconds"
     ),
-    'load_1min': fields.Float(
+    'load': fields.Float(
         required=True,
         description="1 minute load average"
-    ),
-    'load_5min': fields.Float(
-        required=True,
-        description="5 minute load average"
-    ),
-    'load_15min': fields.Float(
-        required=True,
-        description="15 minute load average"
     ),
     'total_ram': fields.Integer(
         required=True,
@@ -80,9 +72,7 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
     'system_info': fields.Nested(SYSINFO_SCHEMA, required=True,
                                  attribute=lambda d: {
                                      'uptime': d.uptime,
-                                     'load_1min': d.load_1min,
-                                     'load_5min': d.load_5min,
-                                     'load_15min': d.load_15min,
+                                     'load': d.load,
                                      'total_ram': d.total_ram,
                                      'free_ram': d.free_ram,
                                      'free_disk': d.free_disk,

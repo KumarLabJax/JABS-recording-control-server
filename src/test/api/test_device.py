@@ -34,9 +34,7 @@ class TestDevice(BaseDBTestCase):
             uptime=128324,
             total_ram=8388608,
             free_ram=7759462,
-            load_1min=0.66,
-            load_5min=0.23,
-            load_15min=0.12,
+            load=0.66,
             sensor_status=json.dumps(sensor_status),
             total_disk=2000000,
             free_disk=1258291
@@ -57,9 +55,7 @@ class TestDevice(BaseDBTestCase):
             uptime=128324,
             total_ram=8388608,
             free_ram=7759462,
-            load_1min=0.66,
-            load_5min=0.23,
-            load_15min=0.12,
+            load=0.66,
             sensor_status=json.dumps(sensor_status),
             total_disk=2000000,
             free_disk=1258291
