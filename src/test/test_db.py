@@ -8,9 +8,11 @@ Tests related to database availability, creation, and interaction
 #pylint: disable=E1101
 
 import unittest
-from src.test import BaseDBTestCase
-from src.app.model.hello_world_model import Hello, HelloSchema
+from datetime import datetime
+import json
 
+from src.test import BaseDBTestCase
+from src.app import model
 
 class DbConnectionTest(BaseDBTestCase):
     """ Is the database available ? """
@@ -21,51 +23,79 @@ class DbConnectionTest(BaseDBTestCase):
             self.assertFalse(conn.closed)
 
 
-class SqlalchemyHelloModelTest(BaseDBTestCase):
+class SqlalchemyDeviceModelTest(BaseDBTestCase):
     """ Test interacting with the provided sqlalchemy definitions """
 
     def setUp(self):
-        self.common_names = ("Liam", "Noah", "William", "James", "Logan")
-        hellos = [Hello(who=name) for name in self.common_names]
-        self.session.bulk_save_objects(hellos)
+
+        sensor_status = {
+            'camera': {
+                'recording': False,
+                'duration': 0,
+                'fps': 0
+            }
+        }
+
+        device1 = model.Device(
+            name="TEST-DEVICE1",
+            state=model.Device.State.IDLE,
+            last_update=datetime.utcnow(),
+            uptime=128324,
+            total_ram=8388608,
+            free_ram=7759462,
+            load_1min=0.66,
+            load_5min=0.23,
+            load_15min=0.12,
+            sensor_status=json.dumps(sensor_status),
+            total_disk=2000000,
+            free_disk=1258291
+        )
+
+        sensor_status = {
+            'camera': {
+                'recording': True,
+                'duration': 5765,
+                'fps': 29.8
+            }
+        }
+
+        device2 = model.Device(
+            name="TEST-DEVICE2",
+            state=model.Device.State.BUSY,
+            last_update=datetime.utcnow(),
+            uptime=128324,
+            total_ram=8388608,
+            free_ram=7759462,
+            load_1min=0.66,
+            load_5min=0.23,
+            load_15min=0.12,
+            sensor_status=json.dumps(sensor_status),
+            total_disk=2000000,
+            free_disk=1258291
+        )
+
+        self.session.bulk_save_objects([device1, device2])
         self.session.commit()
 
-    def test_get_hellos(self):
+    def test_get_devices(self):
         """ Test getting back all entries """
-        hellos = Hello.query.all()
-        self.assertTrue(len(hellos) == 5)
-        for hello in hellos:
-            serialized = HelloSchema().dump(hello)
-            self.assertTrue(serialized.data['who'] in self.common_names)
+        devices = model.Device.get_devices()
+        self.assertTrue(len(devices) == 2)
 
-    def test_get_hello_by_name(self):
-        """ Test getting an entry by name """
-        hello = Hello.query.filter_by(who=self.common_names[0]).first()
-        self.assertTrue(hello is not None)
-        self.assertEqual(hello.who, self.common_names[0])
-
-    def test_query_nonexistant_hello(self):
+    def test_query_nonexistant_device(self):
         """ Test that getting by non-existant name has no result """
-        hello = Hello.query.filter_by(who="John").first()
-        self.assertEqual(hello, None)
-
-    def test_update_hello(self):
-        """ Test that an entry change is successful """
-        hello = Hello.query.filter_by(who=self.common_names[2]).first()
-        hello.who = "Bill"
-        self.session.commit()
-        hello_bill = Hello.query.filter_by(who="Bill").first()
-        self.assertEqual(hello_bill.who, "Bill")
+        device = model.Device.get_by_id(1234)
+        self.assertEqual(device, None)
 
     def test_delete_model(self):
         """ Test that the entry can be deleted """
-        Hello.query.delete()
+        self.session.query(model.Device).delete()
         self.session.commit()
-        hellos = Hello.query.all()
-        self.assertEqual(len(hellos), 0)
+        devices = model.Device.get_devices()
+        self.assertEqual(len(devices), 0)
 
     def tearDown(self):
-        Hello.query.delete()
+        self.session.query(model.Device).delete()
         self.session.commit()
         self.session.remove()
 
