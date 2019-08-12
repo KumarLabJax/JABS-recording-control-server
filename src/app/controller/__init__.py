@@ -13,7 +13,10 @@ from .device_controller import NS as device_ns
 
 
 API_BLUEPRINT = Blueprint('api', __name__)
-DESCRIPTION = 'Flask Service to coordinate the centralized control of multiple long-term monitoring systems'
+DESCRIPTION = (
+    "Flask Service to coordinate the centralized control of multiple long-term "
+    "monitoring systems"
+)
 API = Api(API_BLUEPRINT,
           title='Long-Term Monitoring System Control Service',
           version='0.0.1',
