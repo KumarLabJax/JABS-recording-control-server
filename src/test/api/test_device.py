@@ -2,7 +2,6 @@
 
 import unittest
 import json
-import dateutil
 
 from datetime import datetime
 import src.app.model as model
@@ -106,6 +105,23 @@ class TestDevice(BaseDBTestCase):
         test endpoint to get device by ID, passing unknown ID
         """
         response = self.client.get(self.__endpoint + '/1234')
+        self.assert404(response)
+
+    def test_device_by_name(self):
+        """
+        test endpoint to get device by name
+        """
+        response = self.client.get(self.__endpoint + '/TEST-DEVICE1')
+        self.assert200(response)
+        data = response.json
+        self.assertEqual(data['id'], 1)
+        self.assertEqual(data['name'], 'TEST-DEVICE1')
+
+    def test_device_bad_name(self):
+        """
+        test endpoint to get device by ID, passing unknown device name
+        """
+        response = self.client.get(self.__endpoint + '/unknown_device')
         self.assert404(response)
 
 

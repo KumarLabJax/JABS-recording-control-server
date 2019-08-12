@@ -84,5 +84,16 @@ class ByID(Resource):
     def get(self, device_id):
         """ get a Device by ID """
         device = model.Device.get_by_id(device_id)
-
         return device if device else abort(404, f"Device {device_id} Not Found")
+
+
+@NS.route('/<string:name>')
+class ByName(Resource):
+    """ endpoint for getting a specific device by a unique name """
+
+    @NS.response(404, "Device not found")
+    @NS.marshal_with(DEVICE_SCHEMA)
+    def get(self, name):
+        """ get a Device by name """
+        device = model.Device.get_by_name(name)
+        return device if device else abort(404, f"Device {name} Not Found")
