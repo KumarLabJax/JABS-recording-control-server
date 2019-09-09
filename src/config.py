@@ -42,6 +42,8 @@ class Config:
     SECRET_KEY = _CFG.get('MAIN', 'FLASK_SECRET')
     JWT_SECRET_KEY = _CFG.get('MAIN', 'JWT_SECRET')
 
+    DOWN_DEVICE_THRESHOLD = int(_CFG.get('MAIN', 'DOWN_DEVICE_THRESHOLD'))
+
     ERROR_404_HELP = False
     RESTPLUS_MASK_SWAGGER = False
 

@@ -3,6 +3,8 @@ import pytz
 from sqlalchemy import Column, BigInteger, String, Integer, Float, Enum, \
     TIMESTAMP, func, JSON
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime, timedelta
+import flask
 
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
@@ -134,20 +136,37 @@ class Device(UniqueMixin, BASE):
     @classmethod
     def get_devices(cls, state=None):
         """ get list of devices, optionally filter by device state """
+        cls.check_for_down_devices()
         query = SESSION.query(cls)
         if state is not None:
             query = query.filter(cls.state == state)
-        return query.all()
+        return query.order_by(cls.name).all()
 
     @classmethod
     def get_by_id(cls, device_id):
         """ get a device by its ID """
+        cls.check_for_down_devices()
         return SESSION.query(cls).get(device_id)
 
     @classmethod
     def get_by_name(cls, name):
         """ get a device by its name """
+        cls.check_for_down_devices()
         return SESSION.query(cls).filter(cls.name == name).one_or_none()
+
+    @classmethod
+    def check_for_down_devices(cls):
+        """
+        check for devices that we haven't heard from in a while and set their
+        state to down
+        """
+        since = datetime.utcnow() - timedelta(seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD'])
+        SESSION.query(cls).filter(cls.last_update < since).update({'state': cls.State.DOWN, 'last_update': cls.last_update})
+
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
 
 
 class DeviceSchema(MA.ModelSchema):

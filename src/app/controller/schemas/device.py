@@ -86,5 +86,4 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
 DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
     'id': fields.Integer(required=True),
     'last_update': fields.DateTime(required=True),
-
 })
