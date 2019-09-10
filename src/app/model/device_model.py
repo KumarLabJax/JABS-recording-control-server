@@ -160,9 +160,8 @@ class Device(UniqueMixin, BASE):
         check for devices that we haven't heard from in a while and set their
         state to down
         """
-        since = datetime.utcnow() - timedelta(seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD'])
+        since = cls.__add_tz(datetime.utcnow() - timedelta(seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
         SESSION.query(cls).filter(cls.last_update < since).update({'state': cls.State.DOWN, 'last_update': cls.last_update})
-
         try:
             SESSION.commit()
         except SQLAlchemyError:
