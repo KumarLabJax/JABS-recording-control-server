@@ -38,26 +38,14 @@ class Device(UniqueMixin, BASE):
     )
 
     # host information
-    # system load
-    load = Column(Float, default=0.0)
 
-    # total physical memory in kilobytes
-    total_ram = Column(BigInteger)
-
-    # amount of free memory in kilobytes
-    free_ram = Column(BigInteger)
-
-    # system uptime in seconds
-    uptime = Column(BigInteger)
-
-    # free disk space in megabytes
-    free_disk = Column(BigInteger)
-
-    # total disk space in megabytes
-    total_disk = Column(BigInteger)
-
-    # JSON encoded sensor status
-    sensor_status = Column(JSON)
+    load = Column(Float, default=0.0)   # system load
+    total_ram = Column(BigInteger)      # total physical memory in kilobytes
+    free_ram = Column(BigInteger)       # amount of free memory in kilobytes
+    uptime = Column(BigInteger)         # system uptime in seconds
+    free_disk = Column(BigInteger)      # free disk space in megabytes
+    total_disk = Column(BigInteger)     # total disk space in megabytes
+    sensor_status = Column(JSON)        # JSON encoded sensor status
 
     def state_to_str(self):
         """ Convert the status enum into a string """
@@ -109,6 +97,10 @@ class Device(UniqueMixin, BASE):
         device = Device.as_unique(name=name)
         heartbeat_timestamp = Device.__add_tz(kwargs.pop('last_update'))
 
+        # right now we are only comparing the timestamp in the heartbeat
+        # with the last_update timestamp to check for clock skew.
+        # the database doesn't store the heartbeat timestamp, but it does update
+        # the column automatically on update
         if device.last_update is not None:
             last_update = Device.__add_tz(device.last_update)
             if last_update > heartbeat_timestamp:
@@ -124,7 +116,6 @@ class Device(UniqueMixin, BASE):
                     f"{last_update.isoformat()}"
                 )
 
-        device.last_update = heartbeat_timestamp
         for attr in kwargs:
             setattr(device, attr, kwargs[attr])
         try:
@@ -160,8 +151,10 @@ class Device(UniqueMixin, BASE):
         check for devices that we haven't heard from in a while and set their
         state to down
         """
-        since = cls.__add_tz(datetime.utcnow() - timedelta(seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
-        SESSION.query(cls).filter(cls.last_update < since).update({'state': cls.State.DOWN, 'last_update': cls.last_update})
+        since = cls.__add_tz(datetime.utcnow() - timedelta(
+            seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
+        SESSION.query(cls).filter(cls.last_update < since).update(
+            {'state': cls.State.DOWN, 'last_update': cls.last_update})
         try:
             SESSION.commit()
         except SQLAlchemyError:
