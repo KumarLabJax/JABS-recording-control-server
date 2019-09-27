@@ -33,6 +33,10 @@ SYSINFO_SCHEMA = Model('sysinfo', {
     'total_disk': fields.Integer(
         required=True,
         escription="total disk space in megabytes"
+    ),
+    'release': fields.String(
+        required=True,
+        description="release string provided by device client"
     )
 })
 
@@ -79,7 +83,8 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
                                      'total_ram': d.total_ram,
                                      'free_ram': d.free_ram,
                                      'free_disk': d.free_disk,
-                                     'total_disk': d.total_disk
+                                     'total_disk': d.total_disk,
+                                     'release': d.release
                                  })
 })
 

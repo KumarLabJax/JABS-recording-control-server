@@ -63,9 +63,10 @@ class DeviceFaker(object):
                 }
             },
             'system_info': {
-                "uptime": random.randint(4000, 1000000),
-                "total_ram": 8388608,
-                "total_disk": 2000000
+                'uptime': random.randint(4000, 1000000),
+                'total_ram': 8388608,
+                'total_disk': 2000000,
+                'release': "SIMULATOR"
             }
 
         }

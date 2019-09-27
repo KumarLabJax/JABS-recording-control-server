@@ -38,7 +38,14 @@ class Device(UniqueMixin, BASE):
     )
 
     # host information
+    # - release is either Linux Kernel release string or nVidia Tegra release
+    #   string (first line of /etc/nv_tegra_release) depending on the platform
+    #   used for the devices
+    # - load is the 1 minute load average
+    # - free_disk and total_disk are reported for whatever filesystem the
+    #   directory where video fragments is located on
 
+    release = Column(String)            # release string provided by device
     load = Column(Float, default=0.0)   # system load
     total_ram = Column(BigInteger)      # total physical memory in kilobytes
     free_ram = Column(BigInteger)       # amount of free memory in kilobytes
