@@ -1,7 +1,7 @@
 import enum
 import pytz
 from sqlalchemy import Column, BigInteger, String, Integer, Float, Enum, \
-    TIMESTAMP, func, JSON
+    TIMESTAMP, func, JSON, ForeignKey
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 import flask
@@ -36,6 +36,9 @@ class Device(UniqueMixin, BASE):
         onupdate=func.current_timestamp(),
         nullable=False
     )
+
+    # if the device is recording, this stores the ID of the recording session
+    session_id = Column(Integer, ForeignKey('recording_session.id'))
 
     # host information
     # - release is either Linux Kernel release string or nVidia Tegra release
@@ -103,6 +106,11 @@ class Device(UniqueMixin, BASE):
         name = kwargs.pop('name')
         device = Device.as_unique(name=name)
         heartbeat_timestamp = Device.__add_tz(kwargs.pop('last_update'))
+
+        # when we make updates to a device, we lock it to guard against a
+        # possible race condition where multiple users attempt to add the
+        # device to a recording session at the same time
+        device = SESSION.query(Device).filter(Device.id == device.id).with_for_update().first()
 
         # right now we are only comparing the timestamp in the heartbeat
         # with the last_update timestamp to check for clock skew.

@@ -2,6 +2,8 @@
 The root of our sqlalchemy code
 """
 
+
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,7 +25,11 @@ class LTMSDatabaseException(LTMSControlServiceException):
 
 
 # this needs to be imported after the BASE/SESSION and exceptions are setup
-from .device_model import Device  # pylint: disable=g-import-not-at-top
+# pylint: disable=wrong-import-position
+from .device_model import Device
+from .recording_session_model import RecordingSession, \
+    RecordingSessionHistory, DeviceRecordingStatus
+# pylint: enable=wrong-import-position
 
 
 def init_db(app):
@@ -45,7 +51,7 @@ def create_all(engine):
     """
     Create all the sqlalchemy tables
     :param engine:
-    :return:
+    :return: None
     """
     BASE.metadata.create_all(engine, checkfirst=True)
 
@@ -54,12 +60,17 @@ def drop_all(engine):
     """
     Drop all of the sqlalchemy tables
     :param engine:
-    :return:
+    :return: None
     """
     BASE.metadata.drop_all(engine)
 
 
 def add_object(db_object):
+    """
+    wrapper for adding an object to the session
+    :param db_object: ORM object
+    :return: None
+    """
     try:
         SESSION.add(db_object)
         SESSION.commit()
