@@ -7,6 +7,7 @@ import enum
 from . import BASE, MA, SESSION
 from . import LTMSDatabaseException
 from src.utils.logging import get_module_logger
+from .device_model import Device
 
 LOGGER = get_module_logger()
 
@@ -61,9 +62,9 @@ class RecordingSession(BASE):
         return SESSION.query(cls).get(session_id)
 
     @staticmethod
-    def create(devices, duration, file_prefix=None,
-                           fragment_hourly=False, notes=None,
-                           extended_attributes=None):
+    def create(device_ids, duration, file_prefix=None,
+               fragment_hourly=False, notes=None,
+               extended_attributes=None):
 
         new_session = RecordingSession(
             duration=duration,
@@ -73,17 +74,37 @@ class RecordingSession(BASE):
             extended_attributes=extended_attributes
         )
 
-        for d in devices:
-            print(f"name {d.name} id {d.id}")
-            status = DeviceRecordingStatus(
-                device_id=d.id,
-                status=DeviceRecordingStatus.Status.PENDING
-            )
-            #SESSION.add(status)
-            new_session.device_statuses.append(status)
-            new_session.devices.append(d)
+        # select the devices and lock them for update to avoid race conditions
+        # adding devices to multiple recording sessions at the same time
+        devices = SESSION.query(Device).filter(Device.id.in_(device_ids)).with_for_update().all()
 
-        SESSION.commit()
+        for device in devices:
+            if device.session_id is None:
+                status = DeviceRecordingStatus(
+                    device_id=device.id,
+                    status=DeviceRecordingStatus.Status.PENDING
+                )
+                # only add the device to the session if it wasn't already
+                # assigned to a session
+                new_session.devices.append(device)
+            else:
+                # device already in use, don't make the relationship from the
+                # session to the device, but we still record a failed status 
+                status = DeviceRecordingStatus(
+                    device_id=device.id,
+                    status=DeviceRecordingStatus.Status.FAILED,
+                    message=f"device {device.name} is already assigned to a recording session ({device.session_id})"
+                )
+
+            new_session.device_statuses.append(status)
+
+        SESSION.add(new_session)
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to commit new session")
+
         return new_session
 
 
@@ -109,6 +130,9 @@ class DeviceRecordingStatus(BASE):
 
     # status of device for this session
     status = Column(Enum(Status), nullable=False)
+
+    # how long (in seconds) the device has recorded as part of this session
+    recording_time = Column(Integer, default=0)
 
     # message, if any, sent from device regarding current status
     # for example -- may contain an error message if status == FAILED

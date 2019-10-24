@@ -1,5 +1,6 @@
 from .heartbeat import *
 from .device import *
+from .recording_sesson import *
 
 
 def add_models_to_namespace(namespace, models):

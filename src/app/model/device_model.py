@@ -104,13 +104,14 @@ class Device(UniqueMixin, BASE):
         "heartbeat" message
         """
         name = kwargs.pop('name')
-        device = Device.as_unique(name=name)
+        device, new_device = Device.as_unique(name=name)
         heartbeat_timestamp = Device.__add_tz(kwargs.pop('last_update'))
 
         # when we make updates to a device, we lock it to guard against a
         # possible race condition where multiple users attempt to add the
         # device to a recording session at the same time
-        device = SESSION.query(Device).filter(Device.id == device.id).with_for_update().first()
+        if not new_device:
+            device = SESSION.query(Device).filter(Device.id == device.id).with_for_update().first()
 
         # right now we are only comparing the timestamp in the heartbeat
         # with the last_update timestamp to check for clock skew.
@@ -168,8 +169,17 @@ class Device(UniqueMixin, BASE):
         """
         since = cls.__add_tz(datetime.utcnow() - timedelta(
             seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
-        SESSION.query(cls).filter(cls.last_update < since).update(
-            {'state': cls.State.DOWN, 'last_update': cls.last_update})
+
+        try:
+            SESSION.query(cls).filter(cls.last_update < since).update(
+                {'state': cls.State.DOWN, 'last_update': cls.last_update})
+        except TypeError:
+            SESSION.rollback()
+            since = datetime.utcnow() - timedelta(
+                seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD'])
+            SESSION.query(cls).filter(cls.last_update < since).update(
+                {'state': cls.State.DOWN, 'last_update': cls.last_update})
+
         try:
             SESSION.commit()
         except SQLAlchemyError:

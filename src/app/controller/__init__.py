@@ -10,6 +10,7 @@ from .utils.jwt import AUTHORIZATIONS
 
 from .auth_controller import NS as auth_ns
 from .device_controller import NS as device_ns
+from .recording_session_controller import NS as rec_session_ns
 
 
 API_BLUEPRINT = Blueprint('api', __name__)
@@ -31,3 +32,5 @@ API = Api(API_BLUEPRINT,
 
 API.add_namespace(auth_ns)
 API.add_namespace(device_ns)
+API.add_namespace(rec_session_ns)
+

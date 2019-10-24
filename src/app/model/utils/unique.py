@@ -6,14 +6,16 @@ def _unique(cls, queryfunc, constructor, arg, kw):
     part of a recipe to create model classes that are unique. If a matching
      one already exists in the database it is returned, otherwise one is created
     """
+    new = False
     with SESSION.no_autoflush:
         query = SESSION.query(cls)
         query = queryfunc(query, *arg, **kw)
         obj = query.first()
         if not obj:
+            new = True
             obj = constructor(*arg, **kw)
             SESSION.add(obj)
-    return obj
+    return obj, new
 
 
 class UniqueMixin(object):
