@@ -53,9 +53,9 @@ class RecordingSession(BASE):
     def get(cls):
         active_ids = SESSION.query(DeviceRecordingStatus.session_id).filter(or_(
             DeviceRecordingStatus.status == DeviceRecordingStatus.Status.RECORDING,
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING))
+            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING)).distinct(DeviceRecordingStatus.session_id)
 
-        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order(cls.creation_time).all()
+        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order_by(cls.creation_time.desc()).all()
 
     @classmethod
     def get_by_id(cls, session_id):
