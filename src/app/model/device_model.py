@@ -140,6 +140,17 @@ class Device(UniqueMixin, BASE):
             SESSION.rollback()
             raise LTMSDatabaseException(f"Unable to update device {name}")
 
+        return device
+
+    def clear_session(self):
+        """ clear session info from device """
+        self.session_id = None
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("Unable to clear session_id")
+
     @classmethod
     def get_devices(cls, state=None):
         """ get list of devices, optionally filter by device state """

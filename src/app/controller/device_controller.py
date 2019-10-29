@@ -4,7 +4,8 @@ controller for interacting with devices through the API
 import dateutil.parser
 from flask_restplus import Resource, Namespace, reqparse, abort
 from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
-    SENSOR_STATUS, CAMERA_STATUS, add_models_to_namespace
+    SENSOR_STATUS, CAMERA_STATUS, HEARTBEAT_REPLY_SCHEMA, COMMAND_SCHEMA, \
+    add_models_to_namespace
 import json
 import src.app.model as model
 from src.utils.exceptions import LTMSControlServiceException
@@ -16,7 +17,9 @@ models = [
     HEARTBEAT_SCHEMA,
     SYSINFO_SCHEMA,
     SENSOR_STATUS,
-    CAMERA_STATUS
+    CAMERA_STATUS,
+    HEARTBEAT_REPLY_SCHEMA,
+    COMMAND_SCHEMA
 ]
 NS = add_models_to_namespace(NS, models)
 
@@ -25,17 +28,20 @@ NS = add_models_to_namespace(NS, models)
 class DeviceHeartbeat(Resource):
     """ Endpoint for device heartbeats """
 
-    @NS.response(204, "success, no command")
+    @NS.response(204, "success, no action")
+    @NS.response(204, "success, action")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
+    @NS.marshal_with(HEARTBEAT_REPLY_SCHEMA)
     def post(self):
         data = NS.payload
+        device = None
         try:
             timestamp = dateutil.parser.parse(data['timestamp'])
         except ValueError:
             abort(400, f"unable to parse timestamp: {data['timestamp']}")
 
         try:
-            model.Device.update_from_heartbeat(
+            device = model.Device.update_from_heartbeat(
                 name=data['name'],
                 state=model.Device.State[data['state']],
                 last_update=timestamp,  # pylint: disable=E0601
@@ -50,6 +56,79 @@ class DeviceHeartbeat(Resource):
             )
         except LTMSControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
+
+        # has the device been assigned to a recording session?
+        if device.session_id:
+            client_session = data.get('session_id')
+            device_session_status = model.DeviceRecordingStatus.get_for_device(device)
+
+            # this is an extra sanity check
+            if not device_session_status:
+                #TODO do something more sensible here
+                print("this is bad")
+
+            # device doesn't know it's been assigned to the session yet
+            if not client_session:
+                if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
+                    return {
+                               'commands': [
+                                   {
+                                       'command': "START",
+                                       'parameters': json.dumps({
+                                           'session_id': device.session_id,
+                                           'duration': device.recording_session.duration,
+                                           'fragment_hourly': device.recording_session.fragment_hourly,
+                                           'file_prefix': device.recording_session.file_prefix
+                                       })
+                                   }
+                               ]
+                           }, 200
+                elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
+                    # device appears to have successfully canceled, clear its
+                    # active session so  it is available to be included in a
+                    # new session
+                    try:
+                        device.clear_session()
+                    except LTMSControlServiceException:
+                        # for now pass, it should try again next heartbeat
+                        pass
+                    return '', 204
+                else:
+                    # device doesn't think it's part of the session, but the
+                    # status is not PENDING in the database.
+                    # This could have been a device crash/reboot.
+                    try:
+                        device_session_status.update_status(
+                            model.DeviceRecordingStatus.Status.FAILED,
+                            "Device Error: possible reboot?"
+                        )
+                    except LTMSControlServiceException:
+                        # couldn't update the status for some reason
+                        # don't treat this as fatal, we'll try again next time
+                        pass
+
+            else:
+                # device already knows it is part of a session
+
+                # extra sanity check
+                if device.session_id != client_session:
+                    # device and server are confused. tell device to stop what it is doing
+                    return {'commands': [{'command': "CANCEL"}]}, 200
+
+                # TODO, we could do other sanity checks here
+                # for example, state should be "BUSY" if session_id is included
+                # in the heartbeat
+
+                # device has previously joined the recording session
+                if device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
+                    return {'commands': [{'command': "CANCEL"}]}, 200
+                elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
+                    try:
+                        device_session_status.update_recording_time(data['sensor_status']['camera']['duration'])
+                    except LTMSControlServiceException:
+                        # couldn't update the device time for some reason
+                        # don't treat this as fatal.
+                        pass
 
         return '', 204
 

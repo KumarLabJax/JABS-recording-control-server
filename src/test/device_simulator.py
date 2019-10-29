@@ -67,7 +67,8 @@ class DeviceFaker(object):
                 'total_ram': 8388608,
                 'total_disk': 2000000,
                 'release': "SIMULATOR"
-            }
+            },
+            'session_id': 1
 
         }
 

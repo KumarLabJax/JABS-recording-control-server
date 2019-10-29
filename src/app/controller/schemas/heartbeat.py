@@ -7,5 +7,8 @@ HEARTBEAT_SCHEMA = DEVICE_BASE_SCHEMA.clone('heartbeat', {
     'timestamp': fields.DateTime(
         required=True,
         description="iso8601 formatted datetime. UTC is assumed unless a timezone is specified"
+    ),
+    'session_id': fields.Integer(
+        description="session ID of active recording session, null otherwise"
     )
 })
