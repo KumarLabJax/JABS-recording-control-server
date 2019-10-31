@@ -62,9 +62,7 @@ class RecordingSession(Resource):
                                                 fragment_hourly=fragment,
                                                 extended_attributes=extended,
                                                 notes=notes)
-        for status in session.device_statuses:
-            if status.message:
-                print (status.message)
+
         return session
 
 
@@ -79,6 +77,29 @@ class RecordingSessionByID(Resource):
         return a recording session with a give session ID
         """
         return model.RecordingSession.get_by_id(session_id)
+
+
+@NS.route('/<int:session_id>/device-status/<int:device_id>')
+class RecordingSessionDeviceStatus(Resource):
+    """ Endpoint for getting a device's status for a session """
+
+    @NS.response(404, "recording session or device not found")
+    @NS.marshal_with(DEVICE_SESSION_STATUS)
+    def get(self, session_id, device_id):
+        """
+        return device's recording status for a recording session
+        """
+        device = model.Device.get_by_id(device_id)
+
+        if not device:
+            abort(404, "device not found")
+
+        session = model.RecordingSession.get_by_id(session_id)
+
+        if not session:
+            abort(404, "session not found")
+
+        return model.DeviceRecordingStatus.get(device, session)
 
 
 @NS.route('/history')

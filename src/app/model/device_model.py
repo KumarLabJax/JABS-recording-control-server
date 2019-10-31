@@ -9,7 +9,10 @@ import flask
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
 from . import LTMSDatabaseException
+from src.utils.exceptions import LTMSControlServiceException
 from src.utils.logging import get_module_logger
+
+from src.app import model
 
 LOGGER = get_module_logger()
 
@@ -150,6 +153,22 @@ class Device(UniqueMixin, BASE):
         except SQLAlchemyError:
             SESSION.rollback()
             raise LTMSDatabaseException("Unable to clear session_id")
+
+    def join_session(self, session):
+        if self.session_id is None:
+            status = model.DeviceRecordingStatus.get(self, session)
+            if status:
+                self.session_id = session.id
+                status.status = model.DeviceRecordingStatus.Status.RECORDING
+                try:
+                    SESSION.commit()
+                except SQLAlchemyError:
+                    SESSION.rollback()
+                    raise LTMSDatabaseException("Unable to join session")
+            else:
+                raise LTMSControlServiceException("device not part of session")
+        else:
+            raise LTMSControlServiceException("device already part of another session")
 
     @classmethod
     def get_devices(cls, state=None):

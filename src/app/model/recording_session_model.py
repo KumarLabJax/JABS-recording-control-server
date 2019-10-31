@@ -189,9 +189,9 @@ class DeviceRecordingStatus(BASE):
         return [r.device for r in recording]
 
     @classmethod
-    def get_for_device(cls, device):
+    def get(cls, device, session):
         return SESSION.query(cls).filter(cls.device_id == device.id,
-                                         cls.session_id == device.session_id).one_or_none()
+                                         cls.session_id == session.id).one_or_none()
 
 
 class RecordingSessionHistory(BASE):

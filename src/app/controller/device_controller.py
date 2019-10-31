@@ -58,9 +58,10 @@ class DeviceHeartbeat(Resource):
             abort(400, f"error processing heartbeat {err}")
 
         # has the device been assigned to a recording session?
+        client_session = data.get('session_id')
         if device.session_id:
-            client_session = data.get('session_id')
-            device_session_status = model.DeviceRecordingStatus.get_for_device(device)
+
+            device_session_status = model.DeviceRecordingStatus.get(device, device.recording_session)
 
             # this is an extra sanity check
             if not device_session_status:
@@ -123,6 +124,24 @@ class DeviceHeartbeat(Resource):
                 if device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                     return {'commands': [{'command': "CANCEL"}]}, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
+                    try:
+                        device_session_status.update_recording_time(data['sensor_status']['camera']['duration'])
+                    except LTMSControlServiceException:
+                        # couldn't update the device time for some reason
+                        # don't treat this as fatal.
+                        pass
+        elif client_session:
+            session = model.RecordingSession.get_by_id(client_session)
+
+            if session:
+                device_session_status = model.DeviceRecordingStatus.get(device, session)
+                if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
+                    # device is sending first update after joining the session
+                    try:
+                        device.join_session(device_session_status.session)
+                    except LTMSControlServiceException as err:
+                        abort(400, f"error joining session {err}")
+
                     try:
                         device_session_status.update_recording_time(data['sensor_status']['camera']['duration'])
                     except LTMSControlServiceException:
