@@ -1,7 +1,7 @@
 import enum
 import pytz
 from sqlalchemy import Column, BigInteger, String, Integer, Float, Enum, \
-    TIMESTAMP, func, JSON
+    TIMESTAMP, func, JSON, ForeignKey
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 import flask
@@ -36,6 +36,9 @@ class Device(UniqueMixin, BASE):
         onupdate=func.current_timestamp(),
         nullable=False
     )
+
+    # if the device is recording, this stores the ID of the recording session
+    session_id = Column(Integer, ForeignKey('recording_session.id'))
 
     # host information
     # - release is either Linux Kernel release string or nVidia Tegra release
@@ -101,8 +104,14 @@ class Device(UniqueMixin, BASE):
         "heartbeat" message
         """
         name = kwargs.pop('name')
-        device = Device.as_unique(name=name)
+        device, new_device = Device.as_unique(name=name)
         heartbeat_timestamp = Device.__add_tz(kwargs.pop('last_update'))
+
+        # when we make updates to a device, we lock it to guard against a
+        # possible race condition where multiple users attempt to add the
+        # device to a recording session at the same time
+        if not new_device:
+            device = SESSION.query(Device).filter(Device.id == device.id).with_for_update().first()
 
         # right now we are only comparing the timestamp in the heartbeat
         # with the last_update timestamp to check for clock skew.
@@ -160,8 +169,17 @@ class Device(UniqueMixin, BASE):
         """
         since = cls.__add_tz(datetime.utcnow() - timedelta(
             seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
-        SESSION.query(cls).filter(cls.last_update < since).update(
-            {'state': cls.State.DOWN, 'last_update': cls.last_update})
+
+        try:
+            SESSION.query(cls).filter(cls.last_update < since).update(
+                {'state': cls.State.DOWN, 'last_update': cls.last_update})
+        except TypeError:
+            SESSION.rollback()
+            since = datetime.utcnow() - timedelta(
+                seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD'])
+            SESSION.query(cls).filter(cls.last_update < since).update(
+                {'state': cls.State.DOWN, 'last_update': cls.last_update})
+
         try:
             SESSION.commit()
         except SQLAlchemyError:

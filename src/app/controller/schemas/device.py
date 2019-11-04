@@ -56,6 +56,10 @@ CAMERA_STATUS = Model('camera_status', {
             "If the camera is recording, this value indcates how many frames "
             "per second are being captured"
         )
+    ),
+    'session_id': fields.Integer(
+        description="if camera is recording, this value is the recording "
+                    "session ID that the device has been assigned to"
     )
 })
 
@@ -91,4 +95,5 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
 DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
     'id': fields.Integer(required=True),
     'last_update': fields.DateTime(required=True),
+    'session_id': fields.Integer()
 })

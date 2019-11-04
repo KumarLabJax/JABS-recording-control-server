@@ -66,7 +66,11 @@ class DeviceList(Resource):
     @NS.expect(get_parser, validate=True)
     @NS.marshal_with(DEVICE_SCHEMA, as_list=True)
     def get(self):
-        """ get device(s) """
+        """
+        get device
+
+        can include an optional state string to filter
+        """
         args = self.get_parser.parse_args(strict=True)
         params = {}
 

@@ -9,7 +9,7 @@ from src import factory
 from .controller import API_BLUEPRINT, API
 from .model import MA, init_db, BASE
 from .utils import jwt as jwt_utils
-
+from .model import SESSION
 
 
 def _root():  # pylint: disable=W0612
@@ -49,5 +49,10 @@ def create_app(config_name=None, app=None, config_object=None):
     def root():  # pylint: disable=W0612
         """ Redirect the root endpoint to the api blueprint """
         return redirect('/api')
+
+    @app.after_request
+    def remove_session(response):
+        SESSION.remove()
+        return response
 
     return app

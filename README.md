@@ -4,11 +4,9 @@ Flask Service to coordinate the centralized control of multiple long-term monito
 
 
 #### Setup
-If you elected to have cookiecutter create your virtual environment for you, all you need to run is:
-```
-source <name_of_virtual_environemtn>/bin/activate
-```
-Otherwise, you should first create a virtual environment:
+
+##### Virtual Environment
+create a virtual environment:
 ```
 python3 -m venv venv.ltmcs
 source venv.ltmcs/bin/activate
@@ -53,30 +51,6 @@ optional arguments:
   -?, --help            show this help message and exit
 
 ```
-
-## Using Long-Term Monitoring System Control Service
-
-### Celery
-Before calling a celery task, you need to first start a worker with:
-
-- ```python -m manage start_workers```
-
-Then you can submit a task:
-- ```curl -X POST "http://<SERVER_ADDR>/api/hello/slow_reverse?to_reverse=example" -H "accept: application/json"```
-
-Submitting a task returns a task ID, which can be used to ask for a result:
-- ```curl -X GET "http://<SERVER_ADDR>/api/hello/slow_reverse?task_id=c94e2f89-4b89-4a6b-bd6e-463f19b19aaa" -H "accept: application/json"```
-
-### Globus
-
-Globus endpoints require you to be authenticated, once authenticated you will need to register with Globus
-
-Calling the following will return an auth_url that you should navigate to:
-- ```curl -X GET "http://127.0.0.1:5000/api/globus/login" -H "accept: application/json"```
-
-Globus will do it's part in the oauth flow, then redirect the user back to Long-Term Monitoring System Control Service with a code 
-that can be used to get Globus tokens. Long-Term Monitoring System Control Service then issues new tokens that include the globus
-information and returns them to the user.
 
 Credits
 -------

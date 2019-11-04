@@ -4,7 +4,7 @@ Base classes for use in the testing scripts
 
 # This next line disables checking that attributes are defined outside init
 #   Overriding init for TestCase breaks the library
-#pylint: disable=W0201
+# pylint: disable=W0201
 
 from flask_testing import TestCase, LiveServerTestCase
 from src.app import create_app
