@@ -4,7 +4,7 @@ controller for interacting with devices through the API
 import dateutil.parser
 from flask_restplus import Resource, Namespace, reqparse, abort
 from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
-    SENSOR_STATUS, CAMERA_STATUS, HEARTBEAT_REPLY_SCHEMA, COMMAND_SCHEMA, \
+    SENSOR_STATUS, CAMERA_STATUS, COMMAND_SCHEMA, \
     add_models_to_namespace
 import json
 import src.app.model as model
@@ -19,12 +19,12 @@ models = [
     SYSINFO_SCHEMA,
     SENSOR_STATUS,
     CAMERA_STATUS,
-    HEARTBEAT_REPLY_SCHEMA,
     COMMAND_SCHEMA
 ]
 NS = add_models_to_namespace(NS, models)
 
 LOGGER = get_module_logger()
+
 
 @NS.route('/heartbeat')
 class DeviceHeartbeat(Resource):
@@ -33,7 +33,7 @@ class DeviceHeartbeat(Resource):
     @NS.response(204, "success, no action")
     @NS.response(204, "success, action")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
-    @NS.marshal_with(HEARTBEAT_REPLY_SCHEMA)
+    @NS.marshal_with(COMMAND_SCHEMA)
     def post(self):
         data = NS.payload
         device = None
@@ -81,17 +81,13 @@ class DeviceHeartbeat(Resource):
             if not client_session:
                 if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
                     return {
-                               'commands': [
-                                   {
-                                       'command': "START",
-                                       'parameters': json.dumps({
-                                           'session_id': device.session_id,
-                                           'duration': device.recording_session.duration,
-                                           'fragment_hourly': device.recording_session.fragment_hourly,
-                                           'file_prefix': device.recording_session.file_prefix
-                                       })
-                                   }
-                               ]
+                               'command_name': "START",
+                               'parameters': json.dumps({
+                                   'session_id': device.session_id,
+                                   'duration': device.recording_session.duration,
+                                   'fragment_hourly': device.recording_session.fragment_hourly,
+                                   'file_prefix': device.recording_session.file_prefix
+                               })
                            }, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                     # device appears to have successfully canceled, clear its
@@ -124,13 +120,13 @@ class DeviceHeartbeat(Resource):
                 if device.session_id != client_session:
                     # device and server are confused.
                     # tell device to stop what it is doing
-                    return {'commands': [{'command': "CANCEL"}]}, 200
+                    return {'command_name': "CANCEL"}, 200
 
                 # device has previously joined the recording session
                 if device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                     # we have a cancel request for this device,
                     # tell it to stop recording
-                    return {'commands': [{'command': "CANCEL"}]}, 200
+                    return {'command_name': "CANCEL"}, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
                     # device is recording, update our recording status with
                     # the current recording duration
