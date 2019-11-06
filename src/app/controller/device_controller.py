@@ -109,6 +109,7 @@ class DeviceHeartbeat(Resource):
                             model.DeviceRecordingStatus.Status.FAILED,
                             "device unexpectedly left recording session"
                         )
+                        device.clear_session()
                     except LTMSControlServiceException:
                         # couldn't update the status for some reason
                         # don't treat this as fatal, we'll try again next time

@@ -141,7 +141,6 @@ class DeviceRecordingStatus(BASE):
     device = relationship("Device")
 
     def update_recording_time(self, duration):
-        SESSION.begin_nested()
         self.recording_time = duration
         try:
             SESSION.commit()
