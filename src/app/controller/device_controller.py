@@ -30,7 +30,7 @@ LOGGER = get_module_logger()
 class DeviceHeartbeat(Resource):
     """ Endpoint for device heartbeats """
 
-    @NS.response(204, "success, no action")
+    @NS.response(200, "success, no action")
     @NS.response(204, "success, action")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
     @NS.marshal_with(COMMAND_SCHEMA)
