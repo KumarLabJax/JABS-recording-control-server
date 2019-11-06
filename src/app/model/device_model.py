@@ -155,7 +155,7 @@ class Device(UniqueMixin, BASE):
             raise LTMSDatabaseException("Unable to clear session_id")
 
     def join_session(self, session):
-        if self.session_id is None:
+        if self.session_id == session:
             status = model.DeviceRecordingStatus.get(self, session)
             if status:
                 self.session_id = session.id

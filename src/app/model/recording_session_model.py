@@ -149,7 +149,7 @@ class DeviceRecordingStatus(BASE):
             SESSION.rollback()
             raise LTMSDatabaseException("unable to update recording_time")
 
-    def update_status(self, new_status, message):
+    def update_status(self, new_status, message=None):
         self.status = new_status
         self.message = message
         try:
