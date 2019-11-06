@@ -137,7 +137,7 @@ class DeviceHeartbeat(Resource):
                         device.clear_session()
 
                         # tell device to leave session
-                        return {'command_name': "STOP"}, 200
+                        return {'command_name': "COMPLETE"}, 200
                     except LTMSControlServiceException:
                         # couldn't update the device for some reason
                         # don't treat this as fatal. Device will try again.
