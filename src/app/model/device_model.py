@@ -155,18 +155,27 @@ class Device(UniqueMixin, BASE):
             raise LTMSDatabaseException("Unable to clear session_id")
 
     def join_session(self, session):
+        """
+        change device's session status from PENDING to RECORDING
+
+        PENDING meants device has been added to a session and it's active
+        session has been set in the database but the physical device itself
+        hasn't joined the session and started recording
+
+        this is called after a device starts recording to transition its state
+        from PENDING to RECORDING
+        :param session:
+        :return:
+        """
         if self.session_id == session.id:
             status = model.DeviceRecordingStatus.get(self, session)
-            if status:
-                self.session_id = session.id
-                status.status = model.DeviceRecordingStatus.Status.RECORDING
-                try:
-                    SESSION.commit()
-                except SQLAlchemyError:
-                    SESSION.rollback()
-                    raise LTMSDatabaseException("Unable to join session")
-            else:
-                raise LTMSControlServiceException("device not part of session")
+            self.session_id = session.id
+            status.status = model.DeviceRecordingStatus.Status.RECORDING
+            try:
+                SESSION.commit()
+            except SQLAlchemyError:
+                SESSION.rollback()
+                raise LTMSDatabaseException("Unable to join session")
         else:
             raise LTMSControlServiceException("device already part of another session")
 
