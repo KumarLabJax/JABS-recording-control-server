@@ -59,8 +59,10 @@ class DeviceHeartbeat(Resource):
         except LTMSControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
 
-        # has the device been assigned to a recording session?
+        # get session ID included in message if present
         client_session = data.get('session_id')
+
+        # has the device been assigned to a recording session?
         if device.session_id:
 
             device_session_status = model.DeviceRecordingStatus.get(device, device.recording_session)
@@ -81,6 +83,7 @@ class DeviceHeartbeat(Resource):
             # device doesn't know it's been assigned to the session yet
             if not client_session:
                 if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
+                    # we were waiting to hear from device to tell it to start
                     return {
                                'command_name': "START",
                                'parameters': json.dumps({
@@ -103,7 +106,6 @@ class DeviceHeartbeat(Resource):
                 else:
                     # device is unexpectedly idle after it had previously
                     # joined the recording session.
-
                     try:
                         device_session_status.update_status(
                             model.DeviceRecordingStatus.Status.FAILED,
@@ -117,6 +119,7 @@ class DeviceHeartbeat(Resource):
 
             else:
                 # device already knows it is part of a session
+                # update its state accordingly
 
                 # extra sanity check
                 if device.session_id != client_session:
@@ -125,11 +128,13 @@ class DeviceHeartbeat(Resource):
                     return {'command_name': "STOP"}, 200
 
                 if not data['sensor_status']['camera']['recording']:
-                    # device is no longer recording, but it is sending us a status update for a recording session
+                    # device is no longer recording
+                    # it is sending us a status update for a recording session
                     # this means it's done
                     # TODO: we should include a status so it can also relay a recording failure
 
                     try:
+                        # update the recording time with the final number
                         device_session_status.update_recording_time(
                             data['sensor_status']['camera']['duration'])
                         device_session_status.update_status(
@@ -137,7 +142,7 @@ class DeviceHeartbeat(Resource):
                         )
                         device.clear_session()
 
-                        # tell device to leave session
+                        # tell device it is okay to leave the session
                         return {'command_name': "COMPLETE"}, 200
                     except LTMSControlServiceException:
                         # couldn't update the device for some reason
