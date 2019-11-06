@@ -4,11 +4,12 @@ controller for interacting with devices through the API
 import dateutil.parser
 from flask_restplus import Resource, Namespace, reqparse, abort
 from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
-    SENSOR_STATUS, CAMERA_STATUS, HEARTBEAT_REPLY_SCHEMA, COMMAND_SCHEMA, \
+    SENSOR_STATUS, CAMERA_STATUS, COMMAND_SCHEMA, \
     add_models_to_namespace
 import json
 import src.app.model as model
 from src.utils.exceptions import LTMSControlServiceException
+from src.utils.logging import get_module_logger
 
 NS = Namespace('device',
                description='Endpoints for interacting with devices')
@@ -18,10 +19,11 @@ models = [
     SYSINFO_SCHEMA,
     SENSOR_STATUS,
     CAMERA_STATUS,
-    HEARTBEAT_REPLY_SCHEMA,
     COMMAND_SCHEMA
 ]
 NS = add_models_to_namespace(NS, models)
+
+LOGGER = get_module_logger()
 
 
 @NS.route('/heartbeat')
@@ -31,7 +33,7 @@ class DeviceHeartbeat(Resource):
     @NS.response(204, "success, no action")
     @NS.response(204, "success, action")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
-    @NS.marshal_with(HEARTBEAT_REPLY_SCHEMA)
+    @NS.marshal_with(COMMAND_SCHEMA)
     def post(self):
         data = NS.payload
         device = None
@@ -65,28 +67,32 @@ class DeviceHeartbeat(Resource):
 
             # this is an extra sanity check
             if not device_session_status:
-                #TODO do something more sensible here
-                print("this is bad")
+                # device has a session id associated with it in the database,
+                # but it doesn't have a corresponding row in
+                # DeviceRecordingStatus
+                LOGGER.error(f"device doesn't have corresponding DeviceRecordingStatus for session {device.session_id}")
+                try:
+                    device.clear_session()
+                except LTMSControlServiceException:
+                    # for now pass, it should try again next heartbeat
+                    pass
+                return '', 204
 
             # device doesn't know it's been assigned to the session yet
             if not client_session:
                 if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
                     return {
-                               'commands': [
-                                   {
-                                       'command': "START",
-                                       'parameters': json.dumps({
-                                           'session_id': device.session_id,
-                                           'duration': device.recording_session.duration,
-                                           'fragment_hourly': device.recording_session.fragment_hourly,
-                                           'file_prefix': device.recording_session.file_prefix
-                                       })
-                                   }
-                               ]
+                               'command_name': "START",
+                               'parameters': json.dumps({
+                                   'session_id': device.session_id,
+                                   'duration': device.recording_session.duration,
+                                   'fragment_hourly': device.recording_session.fragment_hourly,
+                                   'file_prefix': device.recording_session.file_prefix
+                               })
                            }, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                     # device appears to have successfully canceled, clear its
-                    # active session so  it is available to be included in a
+                    # active session so it is available to be included in a
                     # new session
                     try:
                         device.clear_session()
@@ -113,17 +119,18 @@ class DeviceHeartbeat(Resource):
 
                 # extra sanity check
                 if device.session_id != client_session:
-                    # device and server are confused. tell device to stop what it is doing
-                    return {'commands': [{'command': "CANCEL"}]}, 200
-
-                # TODO, we could do other sanity checks here
-                # for example, state should be "BUSY" if session_id is included
-                # in the heartbeat
+                    # device and server are confused.
+                    # tell device to stop what it is doing
+                    return {'command_name': "CANCEL"}, 200
 
                 # device has previously joined the recording session
                 if device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
-                    return {'commands': [{'command': "CANCEL"}]}, 200
+                    # we have a cancel request for this device,
+                    # tell it to stop recording
+                    return {'command_name': "CANCEL"}, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
+                    # device is recording, update our recording status with
+                    # the current recording duration
                     try:
                         device_session_status.update_recording_time(data['sensor_status']['camera']['duration'])
                     except LTMSControlServiceException:
