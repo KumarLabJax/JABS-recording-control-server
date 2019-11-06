@@ -43,7 +43,7 @@ class RecordingSession(Resource):
         bad_ids = []
         device_ids = []
 
-        # check to see if the IDs
+        # check to see if the IDs are invalid
         for device_id in data['device_ids']:
             if model.Device.get_by_id(device_id) is None:
                 bad_ids.append(device_id)
@@ -62,7 +62,6 @@ class RecordingSession(Resource):
                                                 fragment_hourly=fragment,
                                                 extended_attributes=extended,
                                                 notes=notes)
-
         return session
 
 
