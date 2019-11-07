@@ -30,7 +30,7 @@ LOGGER = get_module_logger()
 class DeviceHeartbeat(Resource):
     """ Endpoint for device heartbeats """
 
-    @NS.response(204, "success, no action")
+    @NS.response(200, "success, no action")
     @NS.response(204, "success, action")
     @NS.expect(HEARTBEAT_SCHEMA, validate=True)
     @NS.marshal_with(COMMAND_SCHEMA)
@@ -59,10 +59,13 @@ class DeviceHeartbeat(Resource):
         except LTMSControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
 
+        # get session ID included in message if present
+        client_session = data.get('session_id')
+
         # has the device been assigned to a recording session?
         if device.session_id:
-            client_session = data.get('session_id')
-            device_session_status = model.DeviceRecordingStatus.get_for_device(device)
+
+            device_session_status = model.DeviceRecordingStatus.get(device, device.recording_session)
 
             # this is an extra sanity check
             if not device_session_status:
@@ -80,6 +83,7 @@ class DeviceHeartbeat(Resource):
             # device doesn't know it's been assigned to the session yet
             if not client_session:
                 if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
+                    # we were waiting to hear from device to tell it to start
                     return {
                                'command_name': "START",
                                'parameters': json.dumps({
@@ -100,14 +104,14 @@ class DeviceHeartbeat(Resource):
                         pass
                     return '', 204
                 else:
-                    # device doesn't think it's part of the session, but the
-                    # status is not PENDING in the database.
-                    # This could have been a device crash/reboot.
+                    # device is unexpectedly idle after it had previously
+                    # joined the recording session.
                     try:
                         device_session_status.update_status(
                             model.DeviceRecordingStatus.Status.FAILED,
-                            "Device Error: possible reboot?"
+                            "device unexpectedly left recording session"
                         )
+                        device.clear_session()
                     except LTMSControlServiceException:
                         # couldn't update the status for some reason
                         # don't treat this as fatal, we'll try again next time
@@ -115,23 +119,69 @@ class DeviceHeartbeat(Resource):
 
             else:
                 # device already knows it is part of a session
+                # update its state accordingly
 
                 # extra sanity check
                 if device.session_id != client_session:
                     # device and server are confused.
                     # tell device to stop what it is doing
-                    return {'command_name': "CANCEL"}, 200
+                    return {'command_name': "STOP"}, 200
 
-                # device has previously joined the recording session
-                if device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
+                if not data['sensor_status']['camera']['recording']:
+                    # device is no longer recording
+
+                    # check to see if there was an error
+                    err_msg = data.get('err_msg')
+
+                    try:
+                        if err_msg:
+                            # handle error case
+                            device_session_status.update_status(
+                                model.DeviceRecordingStatus.Status.FAILED,
+                                err_msg
+                            )
+                        else:
+                            # no error, this means the device finished recording
+                            duration = data['sensor_status']['camera'].get('duration', 0)
+                            device_session_status.update_recording_time(
+                                duration)
+                            device_session_status.update_status(
+                                model.DeviceRecordingStatus.Status.COMPLETE
+                            )
+
+                        device.clear_session()
+                        return {'command_name': "COMPLETE"}, 200
+
+                    except LTMSControlServiceException:
+                        # couldn't update the device for some reason
+                        # don't treat this as fatal. we will try again next time
+                        # device sends us a status update
+                        pass
+
+                elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                     # we have a cancel request for this device,
                     # tell it to stop recording
-                    return {'command_name': "CANCEL"}, 200
+                    return {'command_name': "STOP"}, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
                     # device is recording, update our recording status with
                     # the current recording duration
                     try:
                         device_session_status.update_recording_time(data['sensor_status']['camera']['duration'])
+                    except LTMSControlServiceException:
+                        # couldn't update the device time for some reason
+                        # don't treat this as fatal.
+                        pass
+                elif device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
+                    # device is sending first update after joining the session
+                    try:
+                        device.join_session(
+                            device_session_status.session)
+                    except LTMSControlServiceException as err:
+                        abort(400, f"error joining session {err}")
+
+                    try:
+                        device_session_status.update_recording_time(
+                            data['sensor_status']['camera']['duration'])
                     except LTMSControlServiceException:
                         # couldn't update the device time for some reason
                         # don't treat this as fatal.

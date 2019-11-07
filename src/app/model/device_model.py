@@ -9,7 +9,10 @@ import flask
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
 from . import LTMSDatabaseException
+from src.utils.exceptions import LTMSControlServiceException
 from src.utils.logging import get_module_logger
+
+from src.app import model
 
 LOGGER = get_module_logger()
 
@@ -150,6 +153,31 @@ class Device(UniqueMixin, BASE):
         except SQLAlchemyError:
             SESSION.rollback()
             raise LTMSDatabaseException("Unable to clear session_id")
+
+    def join_session(self, session):
+        """
+        change device's session status from PENDING to RECORDING
+
+        PENDING means device has been added to a session and it's active
+        session has been set in the database but the physical device itself
+        hasn't joined the session and started recording
+
+        this is called after a device starts recording to transition its state
+        from PENDING to RECORDING
+        :param session: session this device will join
+        :return: no return value
+        """
+        if self.session_id == session.id:
+            status = model.DeviceRecordingStatus.get(self, session)
+            self.session_id = session.id
+            status.status = model.DeviceRecordingStatus.Status.RECORDING
+            try:
+                SESSION.commit()
+            except SQLAlchemyError:
+                SESSION.rollback()
+                raise LTMSDatabaseException("Unable to join session")
+        else:
+            raise LTMSControlServiceException("device already part of another session")
 
     @classmethod
     def get_devices(cls, state=None):
