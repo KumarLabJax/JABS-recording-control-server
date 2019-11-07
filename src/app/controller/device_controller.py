@@ -129,24 +129,33 @@ class DeviceHeartbeat(Resource):
 
                 if not data['sensor_status']['camera']['recording']:
                     # device is no longer recording
-                    # it is sending us a status update for a recording session
-                    # this means it's done
-                    # TODO: we should include a status so it can also relay a recording failure
+
+                    # check to see if there was an error
+                    err_msg = data.get('err_msg')
 
                     try:
-                        # update the recording time with the final number
-                        device_session_status.update_recording_time(
-                            data['sensor_status']['camera']['duration'])
-                        device_session_status.update_status(
-                            model.DeviceRecordingStatus.Status.COMPLETE
-                        )
-                        device.clear_session()
+                        if err_msg:
+                            # handle error case
+                            device_session_status.update_status(
+                                model.DeviceRecordingStatus.Status.FAILED,
+                                err_msg
+                            )
+                        else:
+                            # no error, this means the device finished recording
+                            duration = data['sensor_status']['camera'].get('duration', 0)
+                            device_session_status.update_recording_time(
+                                duration)
+                            device_session_status.update_status(
+                                model.DeviceRecordingStatus.Status.COMPLETE
+                            )
 
-                        # tell device it is okay to leave the session
+                        device.clear_session()
                         return {'command_name': "COMPLETE"}, 200
+
                     except LTMSControlServiceException:
                         # couldn't update the device for some reason
-                        # don't treat this as fatal. Device will try again.
+                        # don't treat this as fatal. we will try again next time
+                        # device sends us a status update
                         pass
 
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
