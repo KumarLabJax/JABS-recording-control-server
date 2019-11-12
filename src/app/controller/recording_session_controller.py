@@ -32,7 +32,7 @@ class RecordingSession(Resource):
         """
         return model.RecordingSession.get()
 
-    @NS.expect(NEW_RECORDING_SESSION_SCHEMA)
+    @NS.expect(NEW_RECORDING_SESSION_SCHEMA, validate=True)
     @NS.marshal_with(RECORDING_SESSION_SCHEMA)
     def post(self):
         """
@@ -52,14 +52,16 @@ class RecordingSession(Resource):
         if len(bad_ids) > 0:
             abort(400, f"Invalid device IDs: {bad_ids}")
 
-        prefix = data.get('file_prefix')
+        prefix = data.get('file_prefix', "")
         fragment = data.get('fragment_hourly')
         extended = data.get('extended_attributes')
         notes = data.get('notes')
 
         session = model.RecordingSession.create(device_ids, data['duration'],
+                                                data['name'], fragment,
+                                                data['target_fps'],
+                                                data['apply_filter'],
                                                 file_prefix=prefix,
-                                                fragment_hourly=fragment,
                                                 extended_attributes=extended,
                                                 notes=notes)
         return session
