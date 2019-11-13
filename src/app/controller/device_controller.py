@@ -91,7 +91,8 @@ class DeviceHeartbeat(Resource):
                                    'duration': device.recording_session.duration,
                                    'fragment_hourly': device.recording_session.fragment_hourly,
                                    'file_prefix': device.recording_session.file_prefix,
-                                   'target_fps': device.recording_session.target_fps
+                                   'target_fps': device.recording_session.target_fps,
+                                   'apply_filter': device.recording_session.apply_filter
                                })
                            }, 200
                 elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
