@@ -32,7 +32,7 @@ class RecordingSession(Resource):
         """
         return model.RecordingSession.get()
 
-    @NS.expect(NEW_RECORDING_SESSION_SCHEMA)
+    @NS.expect(NEW_RECORDING_SESSION_SCHEMA, validate=True)
     @NS.marshal_with(RECORDING_SESSION_SCHEMA)
     def post(self):
         """
@@ -52,14 +52,16 @@ class RecordingSession(Resource):
         if len(bad_ids) > 0:
             abort(400, f"Invalid device IDs: {bad_ids}")
 
-        prefix = data.get('file_prefix')
+        prefix = data.get('file_prefix', "")
         fragment = data.get('fragment_hourly')
         extended = data.get('extended_attributes')
         notes = data.get('notes')
 
         session = model.RecordingSession.create(device_ids, data['duration'],
+                                                data['name'], fragment,
+                                                data['target_fps'],
+                                                data['apply_filter'],
                                                 file_prefix=prefix,
-                                                fragment_hourly=fragment,
                                                 extended_attributes=extended,
                                                 notes=notes)
         return session
@@ -76,6 +78,29 @@ class RecordingSessionByID(Resource):
         return a recording session with a give session ID
         """
         return model.RecordingSession.get_by_id(session_id)
+
+
+@NS.route('/<int:session_id>/device-status/<int:device_id>')
+class RecordingSessionDeviceStatus(Resource):
+    """ Endpoint for getting a device's status for a session """
+
+    @NS.response(404, "recording session or device not found")
+    @NS.marshal_with(DEVICE_SESSION_STATUS)
+    def get(self, session_id, device_id):
+        """
+        return device's recording status for a recording session
+        """
+        device = model.Device.get_by_id(device_id)
+
+        if not device:
+            abort(404, "device not found")
+
+        session = model.RecordingSession.get_by_id(session_id)
+
+        if not session:
+            abort(404, "session not found")
+
+        return model.DeviceRecordingStatus.get(device, session)
 
 
 @NS.route('/history')

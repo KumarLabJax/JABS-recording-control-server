@@ -22,6 +22,8 @@ class RecordingSession(BASE):
     # session ID
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+    name = Column(String)
+
     # free form text notes
     notes = Column(Text)
 
@@ -36,13 +38,17 @@ class RecordingSession(BASE):
     duration = Column(Integer, nullable=False)
 
     # user-specified portion of filenames
-    file_prefix = Column(String, nullable=False)
+    file_prefix = Column(String, nullable=True)
 
     # should the device fragment the video files hourly?
     fragment_hourly = Column(Boolean)
 
-    # extended attributes (for example, we may extend the option to specify a
-    # target frames per second for the recording)
+    apply_filter = Column(Boolean)
+
+    target_fps = Column(Integer)
+
+    # extended attributes: allows us to add arbitrary recording session attributes
+    # in the future
     extended_attributes = Column(JSON)
 
     # devices associated with this recording session
@@ -53,17 +59,17 @@ class RecordingSession(BASE):
     def get(cls):
         active_ids = SESSION.query(DeviceRecordingStatus.session_id).filter(or_(
             DeviceRecordingStatus.status == DeviceRecordingStatus.Status.RECORDING,
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING))
+            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING)).distinct(DeviceRecordingStatus.session_id)
 
-        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order(cls.creation_time).all()
+        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order_by(cls.creation_time.desc()).all()
 
     @classmethod
     def get_by_id(cls, session_id):
         return SESSION.query(cls).get(session_id)
 
     @staticmethod
-    def create(device_ids, duration, file_prefix=None,
-               fragment_hourly=False, notes=None,
+    def create(device_ids, duration, name, fragment_hourly, target_fps,
+               apply_filter, file_prefix=None, notes=None,
                extended_attributes=None):
 
         new_session = RecordingSession(
@@ -71,6 +77,9 @@ class RecordingSession(BASE):
             file_prefix=file_prefix,
             fragment_hourly=fragment_hourly,
             notes=notes,
+            target_fps=target_fps,
+            apply_filter=apply_filter,
+            name=name,
             extended_attributes=extended_attributes
         )
 
@@ -140,6 +149,23 @@ class DeviceRecordingStatus(BASE):
 
     device = relationship("Device")
 
+    def update_recording_time(self, duration):
+        self.recording_time = duration
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to update recording_time")
+
+    def update_status(self, new_status, message=None):
+        self.status = new_status
+        self.message = message
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to update status")
+
     @classmethod
     def get_failed(cls):
         """
@@ -169,6 +195,11 @@ class DeviceRecordingStatus(BASE):
         recording = SESSION.query(cls).filter(
             cls.status == cls.Status.RECORDING).all_or_none()
         return [r.device for r in recording]
+
+    @classmethod
+    def get(cls, device, session):
+        return SESSION.query(cls).filter(cls.device_id == device.id,
+                                         cls.session_id == session.id).one_or_none()
 
 
 class RecordingSessionHistory(BASE):

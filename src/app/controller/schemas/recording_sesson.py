@@ -25,6 +25,10 @@ DEVICE_SESSION_STATUS = Model('device_session_status', {
 })
 
 RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
+    'name': fields.String(
+        required=True,
+        description="recording session name"
+    ),
     'notes': fields.String(
         description="free form text notes"
     ),
@@ -36,7 +40,16 @@ RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
         description="user-specified filename prefix"
     ),
     'fragment_hourly': fields.Boolean(
-        description="fragment video files hourly"
+        description="fragment video files hourly",
+        required=True
+    ),
+    'target_fps': fields.Integer(
+        description="target frames per second",
+        required=True
+    ),
+    'apply_filter': fields.Boolean(
+        description="enable filtering during video encoding",
+        required=True
     ),
     'extended_attributes': fields.String(
         description="string containing JSON-encoded extended attributes"
