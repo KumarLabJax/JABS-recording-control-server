@@ -25,12 +25,28 @@ NS = add_models_to_namespace(NS, __schemas)
 class RecordingSession(Resource):
     """ Endpoint for recording sessions """
 
+    get_parser = reqparse.RequestParser(bundle_errors=True)
+    get_parser.add_argument(
+        'active', type=inputs.boolean, location='args', default=None,
+        help=("If True get active recording sessions. "
+              "If false get inactive (previous) recording sessions")
+    )
+
     @NS.marshal_with(RECORDING_SESSION_SCHEMA, as_list=True)
+    @NS.expect(get_parser)
     def get(self):
         """
-        get a list of active recording sessions
+        get a list of recording sessions
         """
-        return model.RecordingSession.get()
+
+        args = RecordingSessionHistory.get_parser.parse_args()
+
+        if args['active'] is True:
+            return model.RecordingSession.get_active()
+        elif args['active'] is False:
+            return model.RecordingSession.get_inactive()
+        else:
+            return model.RecordingSession.get()
 
     @NS.expect(NEW_RECORDING_SESSION_SCHEMA, validate=True)
     @NS.marshal_with(RECORDING_SESSION_SCHEMA)

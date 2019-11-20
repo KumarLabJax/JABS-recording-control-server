@@ -27,8 +27,7 @@ class LTMSDatabaseException(LTMSControlServiceException):
 # this needs to be imported after the BASE/SESSION and exceptions are setup
 # pylint: disable=wrong-import-position
 from .device_model import Device
-from .recording_session_model import RecordingSession, \
-    RecordingSessionHistory, DeviceRecordingStatus
+from .recording_session_model import RecordingSession, DeviceRecordingStatus
 # pylint: enable=wrong-import-position
 
 

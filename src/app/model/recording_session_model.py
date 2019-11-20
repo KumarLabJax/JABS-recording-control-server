@@ -22,7 +22,7 @@ class RecordingSession(BASE):
     # session ID
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    name = Column(String)
+    name = Column(String, nullable=False)
 
     # free form text notes
     notes = Column(Text)
@@ -34,6 +34,8 @@ class RecordingSession(BASE):
         nullable=False
     )
 
+    active = Column(Boolean, nullable=False, default=True)
+
     # duration of recording session in seconds
     duration = Column(Integer, nullable=False)
 
@@ -41,25 +43,46 @@ class RecordingSession(BASE):
     file_prefix = Column(String, nullable=True)
 
     # should the device fragment the video files hourly?
-    fragment_hourly = Column(Boolean)
+    fragment_hourly = Column(Boolean, nullable=False)
 
     # pass frames through filter graph before writing to file?
-    apply_filter = Column(Boolean)
+    apply_filter = Column(Boolean, nullable=False)
 
     # target frame capture rate
-    target_fps = Column(Integer)
+    target_fps = Column(Integer, nullable=False)
 
     # devices associated with this recording session
     devices = relationship("Device", backref="recording_session")
-    device_statuses = relationship("DeviceRecordingStatus", backref="session", cascade="all, delete-orphan")
+    device_statuses = relationship("DeviceRecordingStatus",
+                                   back_populates="session",
+                                   cascade="all, delete, delete-orphan")
+
+    def update_active_status(self):
+        for ds in self.device_statuses:
+            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.PENDING:
+                # at least one device was still actively participating in the recording session
+                return
+        # if we made it this far, all devices are complete, cancelled, or failed
+        self.active = False
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to update active attribute")
 
     @classmethod
     def get(cls):
-        active_ids = SESSION.query(DeviceRecordingStatus.session_id).filter(or_(
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.RECORDING,
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING)).distinct(DeviceRecordingStatus.session_id)
+        return SESSION.query(cls).order_by(cls.creation_time.desc()).all()
 
-        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order_by(cls.creation_time.desc()).all()
+    @classmethod
+    def get_active(cls):
+        return SESSION.query(cls).filter(cls.active).order_by(
+            cls.creation_time.desc()).all()
+
+    @classmethod
+    def get_inactive(cls):
+        return SESSION.query(cls).filter(not cls.active).order_by(
+            cls.creation_time.desc()).all()
 
     @classmethod
     def get_by_id(cls, session_id):
@@ -144,6 +167,7 @@ class DeviceRecordingStatus(BASE):
     message = Column(String)
 
     device = relationship("Device")
+    session = relationship("Parent", back_populates="device_statuses")
 
     def update_recording_time(self, duration):
         self.recording_time = duration
@@ -156,6 +180,9 @@ class DeviceRecordingStatus(BASE):
     def update_status(self, new_status, message=None):
         self.status = new_status
         self.message = message
+        # update the active attribute of the session if necessary due to
+        # change of this device status:
+        self.session.update_active_status()
         try:
             SESSION.commit()
         except SQLAlchemyError:
