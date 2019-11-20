@@ -39,7 +39,8 @@ class RecordingSession(Resource):
         get a list of recording sessions
         """
 
-        args = RecordingSessionHistory.get_parser.parse_args()
+        args = RecordingSession.get_parser.parse_args()
+        print(args)
 
         if args['active'] is True:
             return model.RecordingSession.get_active()
