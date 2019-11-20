@@ -50,10 +50,7 @@ RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
     'apply_filter': fields.Boolean(
         description="enable filtering during video encoding",
         required=True
-    ),
-    'extended_attributes': fields.String(
-        description="string containing JSON-encoded extended attributes"
-    ),
+    )
 })
 
 NEW_RECORDING_SESSION_SCHEMA = RECORDING_SESSION_BASE_SCHEMA.clone(

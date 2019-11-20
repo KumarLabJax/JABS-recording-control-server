@@ -43,13 +43,11 @@ class RecordingSession(BASE):
     # should the device fragment the video files hourly?
     fragment_hourly = Column(Boolean)
 
+    # pass frames through filter graph before writing to file?
     apply_filter = Column(Boolean)
 
+    # target frame capture rate
     target_fps = Column(Integer)
-
-    # extended attributes: allows us to add arbitrary recording session attributes
-    # in the future
-    extended_attributes = Column(JSON)
 
     # devices associated with this recording session
     devices = relationship("Device", backref="recording_session")
@@ -69,8 +67,7 @@ class RecordingSession(BASE):
 
     @staticmethod
     def create(device_ids, duration, name, fragment_hourly, target_fps,
-               apply_filter, file_prefix=None, notes=None,
-               extended_attributes=None):
+               apply_filter, file_prefix=None, notes=None):
 
         new_session = RecordingSession(
             duration=duration,
@@ -79,8 +76,7 @@ class RecordingSession(BASE):
             notes=notes,
             target_fps=target_fps,
             apply_filter=apply_filter,
-            name=name,
-            extended_attributes=extended_attributes
+            name=name
         )
 
         # select the devices and lock them for update to avoid race conditions
@@ -200,41 +196,3 @@ class DeviceRecordingStatus(BASE):
     def get(cls, device, session):
         return SESSION.query(cls).filter(cls.device_id == device.id,
                                          cls.session_id == session.id).one_or_none()
-
-
-class RecordingSessionHistory(BASE):
-    """
-    table storing summaries of completed recording sessions
-    """
-
-    __tablename__ = "recording_session_history"
-
-    # session ID
-    id = Column(Integer, primary_key=True)
-
-    # free form text notes
-    notes = Column(Text)
-
-    # recording session creation time
-    creation_time = Column(
-        TIMESTAMP(timezone=True),
-        nullable=False
-    )
-
-    # recording session configuration
-    configuration = Column(JSON)
-
-    # summary of devices
-    device_info = Column(JSON)
-
-    @classmethod
-    def get(cls, start_date=None, end_date=None):
-        query = SESSION.query(cls)
-
-        if start_date:
-            query = query.filter(cls.creation_time >= start_date)
-
-        if end_date:
-            query = query.filter(cls.creation_time <= end_date)
-
-        return query.all()

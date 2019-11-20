@@ -54,7 +54,6 @@ class RecordingSession(Resource):
 
         prefix = data.get('file_prefix', "")
         fragment = data.get('fragment_hourly')
-        extended = data.get('extended_attributes')
         notes = data.get('notes')
 
         session = model.RecordingSession.create(device_ids, data['duration'],
@@ -62,7 +61,6 @@ class RecordingSession(Resource):
                                                 data['target_fps'],
                                                 data['apply_filter'],
                                                 file_prefix=prefix,
-                                                extended_attributes=extended,
                                                 notes=notes)
         return session
 
