@@ -167,7 +167,7 @@ class DeviceRecordingStatus(BASE):
     message = Column(String)
 
     device = relationship("Device")
-    session = relationship("Parent", back_populates="device_statuses")
+    session = relationship("RecordingSession", back_populates="device_statuses")
 
     def update_recording_time(self, duration):
         self.recording_time = duration
