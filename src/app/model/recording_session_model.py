@@ -17,12 +17,23 @@ class RecordingSession(BASE):
     table storing active recording sessions
     """
 
+    class Status(enum.Enum):
+        """
+        device's status for the session
+        """
+        IN_PROGRESS = enum.auto()  # recording session is in progress
+        COMPLETE = enum.auto()     # session is complete
+        CANCELED = enum.auto()     # user canceled session
+
     __tablename__ = "recording_session"
 
     # session ID
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     name = Column(String, nullable=False)
+
+    # status of device for this session
+    status = Column(Enum(Status), nullable=False, default=Status.IN_PROGRESS)
 
     # free form text notes
     notes = Column(Text)
@@ -70,11 +81,26 @@ class RecordingSession(BASE):
         for ds in self.device_statuses:
             if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.RECORDING:
                 ds.status = DeviceRecordingStatus.Status.CANCELED
+        self.status = self.Status.CANCELED
         try:
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
             raise LTMSDatabaseException("unable to cancel recording session")
+
+    def update_status(self):
+        if self.status == self.Status.IN_PROGRESS:
+            for ds in self.device_statuses:
+                if ds.status in [DeviceRecordingStatus.Status.RECORDING, DeviceRecordingStatus.Status.PENDING]:
+                    # still in progress
+                    return
+            self.status = self.Status.COMPLETE
+            try:
+                SESSION.commit()
+            except SQLAlchemyError:
+                SESSION.rollback()
+                raise LTMSDatabaseException(
+                    "unable to cancel recording session")
 
     @classmethod
     def get(cls):
@@ -135,6 +161,16 @@ class RecordingSession(BASE):
             raise LTMSDatabaseException("unable to commit new session")
 
         return new_session
+
+    @classmethod
+    def check_for_complete(cls):
+        """
+        check for sessions that should have their state changed to complete
+        """
+
+        sessions = SESSION.query(cls).filter(cls.status == cls.Status.IN_PROGRESS)
+        for s in sessions:
+            s.update_status()
 
 
 class DeviceRecordingStatus(BASE):

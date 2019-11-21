@@ -39,6 +39,8 @@ class RecordingSession(Resource):
 
         args = RecordingSession.get_parser.parse_args()
 
+        model.RecordingSession.check_for_complete()
+
         if args['archived'] is True:
             return model.RecordingSession.get_archived()
         else:

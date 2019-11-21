@@ -76,5 +76,9 @@ RECORDING_SESSION_SCHEMA = RECORDING_SESSION_BASE_SCHEMA.clone('active_session',
     'device_statuses': fields.List(
         fields.Nested(DEVICE_SESSION_STATUS),
         description="status of devices assigned to recording session"
+    ),
+    'status': fields.String(
+        attribute=lambda s: s.status.name,
+        description="session status"
     )
 })
