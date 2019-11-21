@@ -33,7 +33,7 @@ class RecordingSession(BASE):
     name = Column(String, nullable=False)
 
     # status of device for this session
-    status = Column(Enum(Status), nullable=False, default=Status.IN_PROGRESS)
+    status = Column(Enum(Status, name="session_state"), nullable=False, default=Status.IN_PROGRESS)
 
     # free form text notes
     notes = Column(Text)
@@ -194,7 +194,7 @@ class DeviceRecordingStatus(BASE):
     session_id = Column(Integer, ForeignKey('recording_session.id', ondelete='CASCADE'), primary_key=True)
 
     # status of device for this session
-    status = Column(Enum(Status), nullable=False)
+    status = Column(Enum(Status, name="device_session_state"), nullable=False)
 
     # how long (in seconds) the device has recorded as part of this session
     recording_time = Column(Integer, default=0)
