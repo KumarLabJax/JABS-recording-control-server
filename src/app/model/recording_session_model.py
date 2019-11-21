@@ -57,22 +57,21 @@ class RecordingSession(BASE):
                                    back_populates="session",
                                    cascade="all, delete, delete-orphan")
 
-    def update_active_status(self):
+    def archive(self):
         for ds in self.device_statuses:
-            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.PENDING:
-                # at least one device was still actively participating in the recording session
-                return
-        # if we made it this far, all devices are complete, cancelled, or failed
-        self.active = False
+            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.RECORDING:
+                ds.status = DeviceRecordingStatus.Status.CANCELED
+        self.archived = True
+
         try:
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to update active attribute")
+            raise LTMSDatabaseException("unable to archive recording session")
 
     @classmethod
     def get(cls):
-        return SESSION.query(cls).filter(not cls.archived).order_by(cls.creation_time.desc()).all()
+        return SESSION.query(cls).filter(cls.archived == False).order_by(cls.creation_time.desc()).all()
 
     @classmethod
     def get_archived(cls):

@@ -89,6 +89,23 @@ class RecordingSessionByID(Resource):
         """
         return model.RecordingSession.get_by_id(session_id)
 
+    @NS.response(204, "session archived")
+    @NS.response(404, "recording session not found")
+    def delete(self, session_id):
+        """
+        archive a recording session with a given session ID, will stop recording
+        if in progress
+        :param session_id:
+        :return:
+        """
+
+        recording_session = model.RecordingSession.get_by_id(session_id)
+        if recording_session is None:
+            abort(404, "redcording session not found")
+
+        recording_session.archive()
+        return "", 204
+
 
 @NS.route('/<int:session_id>/device-status/<int:device_id>')
 class RecordingSessionDeviceStatus(Resource):
