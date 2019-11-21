@@ -34,7 +34,7 @@ class RecordingSession(BASE):
         nullable=False
     )
 
-    active = Column(Boolean, nullable=False, default=True)
+    archived = Column(Boolean, nullable=False, default=False)
 
     # duration of recording session in seconds
     duration = Column(Integer, nullable=False)
@@ -72,16 +72,11 @@ class RecordingSession(BASE):
 
     @classmethod
     def get(cls):
-        return SESSION.query(cls).order_by(cls.creation_time.desc()).all()
+        return SESSION.query(cls).filter(not cls.archived).order_by(cls.creation_time.desc()).all()
 
     @classmethod
-    def get_active(cls):
-        return SESSION.query(cls).filter(cls.active).order_by(
-            cls.creation_time.desc()).all()
-
-    @classmethod
-    def get_inactive(cls):
-        return SESSION.query(cls).filter(not cls.active).order_by(
+    def get_archived(cls):
+        return SESSION.query(cls).filter(cls.archived).order_by(
             cls.creation_time.desc()).all()
 
     @classmethod
@@ -180,9 +175,6 @@ class DeviceRecordingStatus(BASE):
     def update_status(self, new_status, message=None):
         self.status = new_status
         self.message = message
-        # update the active attribute of the session if necessary due to
-        # change of this device status:
-        self.session.update_active_status()
         try:
             SESSION.commit()
         except SQLAlchemyError:

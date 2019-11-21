@@ -26,9 +26,8 @@ class RecordingSession(Resource):
 
     get_parser = reqparse.RequestParser(bundle_errors=True)
     get_parser.add_argument(
-        'active', type=inputs.boolean, location='args', default=None,
-        help=("If True get active recording sessions. "
-              "If false get inactive (previous) recording sessions")
+        'archived', type=inputs.boolean, location='args', default=False,
+        help=("If True get archived recording sessions.")
     )
 
     @NS.marshal_with(RECORDING_SESSION_SCHEMA, as_list=True)
@@ -39,12 +38,9 @@ class RecordingSession(Resource):
         """
 
         args = RecordingSession.get_parser.parse_args()
-        print(args)
 
-        if args['active'] is True:
-            return model.RecordingSession.get_active()
-        elif args['active'] is False:
-            return model.RecordingSession.get_inactive()
+        if args['archived'] is True:
+            return model.RecordingSession.get_archived()
         else:
             return model.RecordingSession.get()
 
