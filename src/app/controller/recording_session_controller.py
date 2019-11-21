@@ -6,7 +6,7 @@ from flask_restplus import Resource, Namespace, reqparse, abort, inputs
 
 import src.app.model as model
 from .schemas import RECORDING_SESSION_SCHEMA, DEVICE_SESSION_STATUS, \
-    RECORDING_SESSION_HISTORY_SCHEMA, NEW_RECORDING_SESSION_SCHEMA, add_models_to_namespace
+    NEW_RECORDING_SESSION_SCHEMA, add_models_to_namespace
 
 NS = Namespace('recording-session',
                description='Endpoints for interacting with recording sessions')
@@ -14,8 +14,7 @@ NS = Namespace('recording-session',
 __schemas = [
     RECORDING_SESSION_SCHEMA,
     DEVICE_SESSION_STATUS,
-    NEW_RECORDING_SESSION_SCHEMA,
-    RECORDING_SESSION_HISTORY_SCHEMA
+    NEW_RECORDING_SESSION_SCHEMA
 ]
 
 NS = add_models_to_namespace(NS, __schemas)
@@ -118,28 +117,3 @@ class RecordingSessionDeviceStatus(Resource):
         return model.DeviceRecordingStatus.get(device, session)
 
 
-@NS.route('/history')
-class RecordingSessionHistory(Resource):
-    """ Endpoint for getting information about previous recording sessions """
-
-    get_parser = reqparse.RequestParser(bundle_errors=True)
-    get_parser.add_argument(
-        'start_date', type=inputs.date, location='args', default=None,
-        help="get recording sessions created on or after this date"
-    )
-    get_parser.add_argument(
-        'end_date', type=inputs.date, location='args', default=None,
-        help="get recording sessions created on or before this date"
-    )
-
-    @NS.marshal_with(RECORDING_SESSION_HISTORY_SCHEMA, as_list=True)
-    @NS.expect(get_parser)
-    def get(self):
-        """
-        get list of previous (no longer active) recording sessions
-
-        can specify optional start and/or end dates
-        """
-
-        args = RecordingSessionHistory.get_parser.parse_args()
-        return model.RecordingSessionHistory.get(args['start_date'], args['end_date'])

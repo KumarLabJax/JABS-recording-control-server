@@ -4,13 +4,16 @@ __all__ = [
     'DEVICE_SESSION_STATUS',
     'RECORDING_SESSION_BASE_SCHEMA',
     'NEW_RECORDING_SESSION_SCHEMA',
-    'RECORDING_SESSION_SCHEMA',
-    'RECORDING_SESSION_HISTORY_SCHEMA'
+    'RECORDING_SESSION_SCHEMA'
 ]
 
 DEVICE_SESSION_STATUS = Model('device_session_status', {
     'device_id': fields.Integer(
         description="session ID"
+    ),
+    'device_name': fields.String(
+        attribute=lambda s: s.device.name,
+        description="device name"
     ),
     'recording_time': fields.Integer(
         description="how long (in seconds) the device has recorded as part of this session"
@@ -73,18 +76,5 @@ RECORDING_SESSION_SCHEMA = RECORDING_SESSION_BASE_SCHEMA.clone('active_session',
     'device_statuses': fields.List(
         fields.Nested(DEVICE_SESSION_STATUS),
         description="status of devices assigned to recording session"
-    )
-})
-
-#TODO add 'configuration' and 'device_info' fields
-RECORDING_SESSION_HISTORY_SCHEMA = Model('recording_session_history', {
-    'id': fields.Integer(
-        description="session ID"
-    ),
-    'creation_time': fields.DateTime(
-        description="iso8601 formatted datetime"
-    ),
-    'notes': fields.String(
-        description="free form text notes"
     )
 })
