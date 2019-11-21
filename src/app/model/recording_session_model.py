@@ -58,9 +58,6 @@ class RecordingSession(BASE):
                                    cascade="all, delete, delete-orphan")
 
     def archive(self):
-        for ds in self.device_statuses:
-            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.RECORDING:
-                ds.status = DeviceRecordingStatus.Status.CANCELED
         self.archived = True
 
         try:
@@ -68,6 +65,16 @@ class RecordingSession(BASE):
         except SQLAlchemyError:
             SESSION.rollback()
             raise LTMSDatabaseException("unable to archive recording session")
+
+    def cancel(self):
+        for ds in self.device_statuses:
+            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.RECORDING:
+                ds.status = DeviceRecordingStatus.Status.CANCELED
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to cancel recording session")
 
     @classmethod
     def get(cls):

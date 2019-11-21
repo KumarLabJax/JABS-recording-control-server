@@ -89,21 +89,33 @@ class RecordingSessionByID(Resource):
         """
         return model.RecordingSession.get_by_id(session_id)
 
+    delete_parser = reqparse.RequestParser(bundle_errors=True)
+    delete_parser.add_argument(
+        'archive', type=inputs.boolean, location='args', default=False,
+        help=("Also archive the recording session.")
+    )
+
     @NS.response(204, "session archived")
     @NS.response(404, "recording session not found")
+    @NS.expect(delete_parser)
     def delete(self, session_id):
         """
-        archive a recording session with a given session ID, will stop recording
-        if in progress
+        cancel an active session if it is still running and optionally
+        archive the session.
         :param session_id:
-        :return:
+        :return: no content
         """
+
+        args = RecordingSessionByID.delete_parser.parse_args()
 
         recording_session = model.RecordingSession.get_by_id(session_id)
         if recording_session is None:
             abort(404, "redcording session not found")
 
-        recording_session.archive()
+        recording_session.cancel()
+
+        if args['archive']:
+            recording_session.archive()
         return "", 204
 
 
