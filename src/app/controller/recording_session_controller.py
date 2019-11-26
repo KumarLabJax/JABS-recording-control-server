@@ -67,7 +67,6 @@ class RecordingSession(Resource):
         if len(bad_ids) > 0:
             abort(400, f"Invalid device IDs: {bad_ids}")
 
-        prefix = data.get('file_prefix', "")
         fragment = data.get('fragment_hourly')
         notes = data.get('notes')
 
@@ -75,7 +74,6 @@ class RecordingSession(Resource):
                                                 data['name'], fragment,
                                                 data['target_fps'],
                                                 data['apply_filter'],
-                                                file_prefix=prefix,
                                                 notes=notes)
         return session
 

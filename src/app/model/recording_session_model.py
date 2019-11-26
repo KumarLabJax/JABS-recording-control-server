@@ -117,11 +117,10 @@ class RecordingSession(BASE):
 
     @staticmethod
     def create(device_spec, duration, name, fragment_hourly, target_fps,
-               apply_filter, file_prefix=None, notes=None):
+               apply_filter, notes=None):
 
         new_session = RecordingSession(
             duration=duration,
-            file_prefix=file_prefix,
             fragment_hourly=fragment_hourly,
             notes=notes,
             target_fps=target_fps,
