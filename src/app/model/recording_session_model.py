@@ -133,7 +133,7 @@ class RecordingSession(BASE):
         device_ids = [d['device_id'] for d in device_spec]
         file_prefixes = {}
         for spec in device_spec:
-            file_prefixes[spec['id']] = spec['filename_prefix']
+            file_prefixes[spec['device_id']] = spec['filename_prefix']
         devices = SESSION.query(Device).filter(Device.id.in_(device_ids)).with_for_update().all()
 
         for device in devices:
