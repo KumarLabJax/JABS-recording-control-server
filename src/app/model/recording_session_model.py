@@ -116,7 +116,7 @@ class RecordingSession(BASE):
         return SESSION.query(cls).get(session_id)
 
     @staticmethod
-    def create(device_ids, duration, name, fragment_hourly, target_fps,
+    def create(device_spec, duration, name, fragment_hourly, target_fps,
                apply_filter, file_prefix=None, notes=None):
 
         new_session = RecordingSession(
@@ -131,12 +131,17 @@ class RecordingSession(BASE):
 
         # select the devices and lock them for update to avoid race conditions
         # adding devices to multiple recording sessions at the same time
+        device_ids = [d.id for d in device_spec]
+        file_prefixes = {}
+        for spec in device_spec:
+            file_prefix[spec.id] = spec.file_prefix
         devices = SESSION.query(Device).filter(Device.id.in_(device_ids)).with_for_update().all()
 
         for device in devices:
             if device.session_id is None:
                 status = DeviceRecordingStatus(
                     device_id=device.id,
+                    file_prefix=file_prefix[device.id],
                     status=DeviceRecordingStatus.Status.PENDING
                 )
                 # only add the device to the session if it wasn't already
@@ -192,6 +197,9 @@ class DeviceRecordingStatus(BASE):
     # device id and session id form a composite primary key
     device_id = Column(Integer, ForeignKey('device.id'), primary_key=True)
     session_id = Column(Integer, ForeignKey('recording_session.id', ondelete='CASCADE'), primary_key=True)
+
+    # device's file prefix for this recording session
+    file_prefix = Column(String)
 
     # status of device for this session
     status = Column(Enum(Status, name="device_session_state"), nullable=False)

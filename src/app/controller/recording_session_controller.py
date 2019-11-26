@@ -6,7 +6,7 @@ from flask_restplus import Resource, Namespace, reqparse, abort, inputs
 
 import src.app.model as model
 from .schemas import RECORDING_SESSION_SCHEMA, DEVICE_SESSION_STATUS, \
-    NEW_RECORDING_SESSION_SCHEMA, add_models_to_namespace
+    NEW_RECORDING_SESSION_SCHEMA, DEVICE_SPECIFICATION_SCHEMA, add_models_to_namespace
 
 NS = Namespace('recording-session',
                description='Endpoints for interacting with recording sessions')
@@ -14,7 +14,8 @@ NS = Namespace('recording-session',
 __schemas = [
     RECORDING_SESSION_SCHEMA,
     DEVICE_SESSION_STATUS,
-    NEW_RECORDING_SESSION_SCHEMA
+    NEW_RECORDING_SESSION_SCHEMA,
+    DEVICE_SPECIFICATION_SCHEMA
 ]
 
 NS = add_models_to_namespace(NS, __schemas)
@@ -55,14 +56,14 @@ class RecordingSession(Resource):
         data = NS.payload
 
         bad_ids = []
-        device_ids = []
+        device_spec = []
 
         # check to see if the IDs are invalid
-        for device_id in data['device_ids']:
-            if model.Device.get_by_id(device_id) is None:
-                bad_ids.append(device_id)
+        for dev in data['device_spec']:
+            if model.Device.get_by_id(dev.device_id) is None:
+                bad_ids.append(dev.device_id)
             else:
-                device_ids.append(device_id)
+                device_spec.append(dev)
         if len(bad_ids) > 0:
             abort(400, f"Invalid device IDs: {bad_ids}")
 
@@ -70,7 +71,7 @@ class RecordingSession(Resource):
         fragment = data.get('fragment_hourly')
         notes = data.get('notes')
 
-        session = model.RecordingSession.create(device_ids, data['duration'],
+        session = model.RecordingSession.create(device_spec, data['duration'],
                                                 data['name'], fragment,
                                                 data['target_fps'],
                                                 data['apply_filter'],

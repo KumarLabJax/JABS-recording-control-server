@@ -4,16 +4,20 @@ __all__ = [
     'DEVICE_SESSION_STATUS',
     'RECORDING_SESSION_BASE_SCHEMA',
     'NEW_RECORDING_SESSION_SCHEMA',
-    'RECORDING_SESSION_SCHEMA'
+    'RECORDING_SESSION_SCHEMA',
+    'DEVICE_SPECIFICATION_SCHEMA'
 ]
 
 DEVICE_SESSION_STATUS = Model('device_session_status', {
     'device_id': fields.Integer(
-        description="session ID"
+        description="device ID"
     ),
     'device_name': fields.String(
         attribute=lambda s: s.device.name,
         description="device name"
+    ),
+    'filename_prefix': fields.String(
+        description="filename prefix"
     ),
     'recording_time': fields.Integer(
         description="how long (in seconds) the device has recorded as part of this session"
@@ -24,6 +28,17 @@ DEVICE_SESSION_STATUS = Model('device_session_status', {
     ),
     'message': fields.String(
         description="additional status information. always set for FAILED."
+    )
+})
+
+DEVICE_SPECIFICATION_SCHEMA = Model('device_spec', {
+    'device_id': fields.Integer(
+        required=True,
+        description="device id"
+    ),
+    'filename_prefix': fields.String(
+        required=True,
+        description="filename prefix"
     )
 })
 
@@ -38,9 +53,6 @@ RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
     'duration': fields.Integer(
         required=True,
         description="specified duration in seconds"
-    ),
-    'file_prefix': fields.String(
-        description="user-specified filename prefix"
     ),
     'fragment_hourly': fields.Boolean(
         description="fragment video files hourly",
@@ -58,10 +70,9 @@ RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
 
 NEW_RECORDING_SESSION_SCHEMA = RECORDING_SESSION_BASE_SCHEMA.clone(
     'new_session', {
-        'device_ids': fields.List(
-            fields.Integer,
-            description="IDs of devices to include in session",
-            required=True
+        'device_spec': fields.List(
+            fields.Nested(DEVICE_SPECIFICATION_SCHEMA),
+            description="recording session devices and any device specific information"
         )
     }
 )
