@@ -60,8 +60,8 @@ class RecordingSession(Resource):
 
         # check to see if the IDs are invalid
         for dev in data['device_spec']:
-            if model.Device.get_by_id(dev.device_id) is None:
-                bad_ids.append(dev.device_id)
+            if model.Device.get_by_id(dev['device_id']) is None:
+                bad_ids.append(dev['device_id'])
             else:
                 device_spec.append(dev)
         if len(bad_ids) > 0:

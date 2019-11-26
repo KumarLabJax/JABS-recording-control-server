@@ -130,17 +130,17 @@ class RecordingSession(BASE):
 
         # select the devices and lock them for update to avoid race conditions
         # adding devices to multiple recording sessions at the same time
-        device_ids = [d.id for d in device_spec]
+        device_ids = [d['device_id'] for d in device_spec]
         file_prefixes = {}
         for spec in device_spec:
-            file_prefix[spec.id] = spec.file_prefix
+            file_prefixes[spec['id']] = spec['file_prefix']
         devices = SESSION.query(Device).filter(Device.id.in_(device_ids)).with_for_update().all()
 
         for device in devices:
             if device.session_id is None:
                 status = DeviceRecordingStatus(
                     device_id=device.id,
-                    file_prefix=file_prefix[device.id],
+                    file_prefix=file_prefixes[device.id],
                     status=DeviceRecordingStatus.Status.PENDING
                 )
                 # only add the device to the session if it wasn't already
