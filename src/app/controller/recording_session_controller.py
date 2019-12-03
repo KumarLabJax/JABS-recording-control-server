@@ -143,6 +143,7 @@ class RecordingSessionDeviceStatus(Resource):
         return model.DeviceRecordingStatus.get(device, session)
 
     @NS.response(404, "recording session or device not found")
+    @NS.response(204, "success")
     def delete(self, session_id, device_id):
         """
         remove a device from a recording session
@@ -159,6 +160,9 @@ class RecordingSessionDeviceStatus(Resource):
             abort(404, "session not found")
 
         status = model.DeviceRecordingStatus.get(device, session)
+
+        # this will remove the device from the session if it is pending or
+        # recording. If the state is complete or failed, it has no effect
         status.remove_from_session()
 
         return "", 204
