@@ -90,7 +90,7 @@ class DeviceHeartbeat(Resource):
                                    'session_id': device.session_id,
                                    'duration': device.recording_session.duration,
                                    'fragment_hourly': device.recording_session.fragment_hourly,
-                                   'file_prefix': device.recording_session.file_prefix,
+                                   'file_prefix': device_session_status.file_prefix,
                                    'target_fps': device.recording_session.target_fps,
                                    'apply_filter': device.recording_session.apply_filter
                                })

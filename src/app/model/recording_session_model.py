@@ -17,12 +17,23 @@ class RecordingSession(BASE):
     table storing active recording sessions
     """
 
+    class Status(enum.Enum):
+        """
+        device's status for the session
+        """
+        IN_PROGRESS = enum.auto()  # recording session is in progress
+        COMPLETE = enum.auto()     # session is complete
+        CANCELED = enum.auto()     # user canceled session
+
     __tablename__ = "recording_session"
 
     # session ID
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    name = Column(String)
+    name = Column(String, nullable=False)
+
+    # status of device for this session
+    status = Column(Enum(Status, name="session_state"), nullable=False, default=Status.IN_PROGRESS)
 
     # free form text notes
     notes = Column(Text)
@@ -34,6 +45,8 @@ class RecordingSession(BASE):
         nullable=False
     )
 
+    archived = Column(Boolean, nullable=False, default=False)
+
     # duration of recording session in seconds
     duration = Column(Integer, nullable=False)
 
@@ -41,56 +54,93 @@ class RecordingSession(BASE):
     file_prefix = Column(String, nullable=True)
 
     # should the device fragment the video files hourly?
-    fragment_hourly = Column(Boolean)
+    fragment_hourly = Column(Boolean, nullable=False)
 
-    apply_filter = Column(Boolean)
+    # pass frames through filter graph before writing to file?
+    apply_filter = Column(Boolean, nullable=False)
 
-    target_fps = Column(Integer)
-
-    # extended attributes: allows us to add arbitrary recording session attributes
-    # in the future
-    extended_attributes = Column(JSON)
+    # target frame capture rate
+    target_fps = Column(Integer, nullable=False)
 
     # devices associated with this recording session
     devices = relationship("Device", backref="recording_session")
-    device_statuses = relationship("DeviceRecordingStatus", backref="session", cascade="all, delete-orphan")
+    device_statuses = relationship("DeviceRecordingStatus",
+                                   back_populates="session",
+                                   cascade="all, delete, delete-orphan")
+
+    def archive(self):
+        self.archived = True
+
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to archive recording session")
+
+    def cancel(self):
+        for ds in self.device_statuses:
+            if ds.status == DeviceRecordingStatus.Status.PENDING or ds.status == DeviceRecordingStatus.Status.RECORDING:
+                ds.status = DeviceRecordingStatus.Status.CANCELED
+        self.status = self.Status.CANCELED
+        try:
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
+            raise LTMSDatabaseException("unable to cancel recording session")
+
+    def update_status(self):
+        if self.status == self.Status.IN_PROGRESS:
+            for ds in self.device_statuses:
+                if ds.status in [DeviceRecordingStatus.Status.RECORDING, DeviceRecordingStatus.Status.PENDING]:
+                    # still in progress
+                    return
+            self.status = self.Status.COMPLETE
+            try:
+                SESSION.commit()
+            except SQLAlchemyError:
+                SESSION.rollback()
+                raise LTMSDatabaseException(
+                    "unable to cancel recording session")
 
     @classmethod
     def get(cls):
-        active_ids = SESSION.query(DeviceRecordingStatus.session_id).filter(or_(
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.RECORDING,
-            DeviceRecordingStatus.status == DeviceRecordingStatus.Status.PENDING)).distinct(DeviceRecordingStatus.session_id)
+        return SESSION.query(cls).filter(cls.archived == False).order_by(cls.creation_time.desc()).all()
 
-        return SESSION.query(cls).filter(RecordingSession.id.in_(active_ids)).order_by(cls.creation_time.desc()).all()
+    @classmethod
+    def get_archived(cls):
+        return SESSION.query(cls).filter(cls.archived).order_by(
+            cls.creation_time.desc()).all()
 
     @classmethod
     def get_by_id(cls, session_id):
         return SESSION.query(cls).get(session_id)
 
     @staticmethod
-    def create(device_ids, duration, name, fragment_hourly, target_fps,
-               apply_filter, file_prefix=None, notes=None,
-               extended_attributes=None):
+    def create(device_spec, duration, name, fragment_hourly, target_fps,
+               apply_filter, notes=None):
 
         new_session = RecordingSession(
             duration=duration,
-            file_prefix=file_prefix,
             fragment_hourly=fragment_hourly,
             notes=notes,
             target_fps=target_fps,
             apply_filter=apply_filter,
-            name=name,
-            extended_attributes=extended_attributes
+            name=name
         )
 
         # select the devices and lock them for update to avoid race conditions
         # adding devices to multiple recording sessions at the same time
+        device_ids = [d['device_id'] for d in device_spec]
+        file_prefixes = {}
+        for spec in device_spec:
+            file_prefixes[spec['device_id']] = spec['filename_prefix']
         devices = SESSION.query(Device).filter(Device.id.in_(device_ids)).with_for_update().all()
 
         for device in devices:
             if device.session_id is None:
                 status = DeviceRecordingStatus(
                     device_id=device.id,
+                    file_prefix=file_prefixes[device.id],
                     status=DeviceRecordingStatus.Status.PENDING
                 )
                 # only add the device to the session if it wasn't already
@@ -116,6 +166,16 @@ class RecordingSession(BASE):
 
         return new_session
 
+    @classmethod
+    def check_for_complete(cls):
+        """
+        check for sessions that should have their state changed to complete
+        """
+
+        sessions = SESSION.query(cls).filter(cls.status == cls.Status.IN_PROGRESS)
+        for s in sessions:
+            s.update_status()
+
 
 class DeviceRecordingStatus(BASE):
     """
@@ -137,8 +197,11 @@ class DeviceRecordingStatus(BASE):
     device_id = Column(Integer, ForeignKey('device.id'), primary_key=True)
     session_id = Column(Integer, ForeignKey('recording_session.id', ondelete='CASCADE'), primary_key=True)
 
+    # device's file prefix for this recording session
+    file_prefix = Column(String)
+
     # status of device for this session
-    status = Column(Enum(Status), nullable=False)
+    status = Column(Enum(Status, name="device_session_state"), nullable=False)
 
     # how long (in seconds) the device has recorded as part of this session
     recording_time = Column(Integer, default=0)
@@ -148,6 +211,7 @@ class DeviceRecordingStatus(BASE):
     message = Column(String)
 
     device = relationship("Device")
+    session = relationship("RecordingSession", back_populates="device_statuses")
 
     def update_recording_time(self, duration):
         self.recording_time = duration
@@ -200,41 +264,3 @@ class DeviceRecordingStatus(BASE):
     def get(cls, device, session):
         return SESSION.query(cls).filter(cls.device_id == device.id,
                                          cls.session_id == session.id).one_or_none()
-
-
-class RecordingSessionHistory(BASE):
-    """
-    table storing summaries of completed recording sessions
-    """
-
-    __tablename__ = "recording_session_history"
-
-    # session ID
-    id = Column(Integer, primary_key=True)
-
-    # free form text notes
-    notes = Column(Text)
-
-    # recording session creation time
-    creation_time = Column(
-        TIMESTAMP(timezone=True),
-        nullable=False
-    )
-
-    # recording session configuration
-    configuration = Column(JSON)
-
-    # summary of devices
-    device_info = Column(JSON)
-
-    @classmethod
-    def get(cls, start_date=None, end_date=None):
-        query = SESSION.query(cls)
-
-        if start_date:
-            query = query.filter(cls.creation_time >= start_date)
-
-        if end_date:
-            query = query.filter(cls.creation_time <= end_date)
-
-        return query.all()
