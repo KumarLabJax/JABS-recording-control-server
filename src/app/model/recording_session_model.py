@@ -230,6 +230,10 @@ class DeviceRecordingStatus(BASE):
             SESSION.rollback()
             raise LTMSDatabaseException("unable to update status")
 
+    def remove_from_session(self):
+        if self.status == self.Status.RECORDING or self.status == self.Status.PENDING:
+            self.update_status(self.Status.CANCELED)
+
     @classmethod
     def get_failed(cls):
         """
