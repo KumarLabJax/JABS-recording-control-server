@@ -29,6 +29,9 @@ class Device(UniqueMixin, BASE):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, index=True, unique=True)
 
+    # device location string, sent from device client
+    location = Column(String)
+
     # state of device (see State enum above for valid states)
     state = Column(Enum(State), nullable=False)
 
