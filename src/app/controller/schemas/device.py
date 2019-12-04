@@ -68,6 +68,9 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
         required=True,
         description="name of the device sending the heartbeat"
     ),
+    'location': fields.String(
+        description="location of device"
+    ),
     'state': fields.String(
         enum=['IDLE', 'BUSY'], required=True, attribute=lambda d: d.state.name,
         description=("Device State. BUSY (currently performing a task, e.g. "

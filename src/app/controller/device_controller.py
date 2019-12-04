@@ -54,7 +54,8 @@ class DeviceHeartbeat(Resource):
                 sensor_status=json.dumps(data['sensor_status']),
                 total_disk=data['system_info']['total_disk'],
                 free_disk=data['system_info']['free_disk'],
-                release=data['system_info']['release']
+                release=data['system_info']['release'],
+                location=data.get('location')
             )
         except LTMSControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
