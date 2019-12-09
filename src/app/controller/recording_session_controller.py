@@ -68,13 +68,11 @@ class RecordingSession(Resource):
             abort(400, f"Invalid device IDs: {bad_ids}")
 
         fragment = data.get('fragment_hourly')
-        notes = data.get('notes')
 
         session = model.RecordingSession.create(device_spec, data['duration'],
                                                 data['name'], fragment,
                                                 data['target_fps'],
-                                                data['apply_filter'],
-                                                notes=notes)
+                                                data['apply_filter'])
         return session
 
 

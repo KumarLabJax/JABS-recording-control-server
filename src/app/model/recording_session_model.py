@@ -35,9 +35,6 @@ class RecordingSession(BASE):
     # status of device for this session
     status = Column(Enum(Status, name="session_state"), nullable=False, default=Status.IN_PROGRESS)
 
-    # free form text notes
-    notes = Column(Text)
-
     # recording session creation time
     creation_time = Column(
         TIMESTAMP(timezone=True),
@@ -117,12 +114,11 @@ class RecordingSession(BASE):
 
     @staticmethod
     def create(device_spec, duration, name, fragment_hourly, target_fps,
-               apply_filter, notes=None):
+               apply_filter):
 
         new_session = RecordingSession(
             duration=duration,
             fragment_hourly=fragment_hourly,
-            notes=notes,
             target_fps=target_fps,
             apply_filter=apply_filter,
             name=name

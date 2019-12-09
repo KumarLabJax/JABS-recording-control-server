@@ -47,9 +47,6 @@ RECORDING_SESSION_BASE_SCHEMA = Model('session_base', {
         required=True,
         description="recording session name"
     ),
-    'notes': fields.String(
-        description="free form text notes"
-    ),
     'duration': fields.Integer(
         required=True,
         description="specified duration in seconds"
