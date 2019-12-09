@@ -148,9 +148,10 @@ class DeviceHeartbeat(Resource):
                             duration = data['sensor_status']['camera'].get('duration', 0)
                             device_session_status.update_recording_time(
                                 duration)
-                            device_session_status.update_status(
-                                model.DeviceRecordingStatus.Status.COMPLETE
-                            )
+                            if device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
+                                device_session_status.update_status(
+                                    model.DeviceRecordingStatus.Status.COMPLETE
+                                )
 
                         device.clear_session()
                         return {'command_name': "COMPLETE"}, 200

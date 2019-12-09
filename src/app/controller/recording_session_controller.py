@@ -68,13 +68,11 @@ class RecordingSession(Resource):
             abort(400, f"Invalid device IDs: {bad_ids}")
 
         fragment = data.get('fragment_hourly')
-        notes = data.get('notes')
 
         session = model.RecordingSession.create(device_spec, data['duration'],
                                                 data['name'], fragment,
                                                 data['target_fps'],
-                                                data['apply_filter'],
-                                                notes=notes)
+                                                data['apply_filter'])
         return session
 
 
@@ -142,4 +140,27 @@ class RecordingSessionDeviceStatus(Resource):
 
         return model.DeviceRecordingStatus.get(device, session)
 
+    @NS.response(404, "recording session or device not found")
+    @NS.response(204, "success")
+    def delete(self, session_id, device_id):
+        """
+        remove a device from a recording session
+        """
 
+        device = model.Device.get_by_id(device_id)
+
+        if not device:
+            abort(404, "device not found")
+
+        session = model.RecordingSession.get_by_id(session_id)
+
+        if not session:
+            abort(404, "session not found")
+
+        status = model.DeviceRecordingStatus.get(device, session)
+
+        # this will remove the device from the session if it is pending or
+        # recording. If the state is complete or failed, it has no effect
+        status.remove_from_session()
+
+        return "", 204

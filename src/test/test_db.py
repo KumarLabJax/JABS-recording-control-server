@@ -156,8 +156,7 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
 
         new_session = model.RecordingSession.create([device1], duration=600,
                                                     file_prefix="test_prefix",
-                                                    fragment_hourly=True,
-                                                    notes="this is a test")
+                                                    fragment_hourly=True)
 
         self.assertTrue(len(new_session.device_statuses) == 1)
         self.assertEqual(new_session.duration, 600)
