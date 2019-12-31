@@ -1,4 +1,5 @@
 from flask_restplus import fields, Model
+from .device import DEVICE_SCHEMA
 
 __all__ = [
     'DEVICE_SESSION_STATUS',
@@ -9,12 +10,9 @@ __all__ = [
 ]
 
 DEVICE_SESSION_STATUS = Model('device_session_status', {
-    'device_id': fields.Integer(
-        description="device ID"
-    ),
-    'device_name': fields.String(
-        attribute=lambda s: s.device.name,
-        description="device name"
+    'device': fields.Nested(
+        DEVICE_SCHEMA,
+        description="subject device"
     ),
     'filename_prefix': fields.String(
         description="filename prefix"
