@@ -2,7 +2,7 @@
 controller for interacting with devices through the API
 """
 import dateutil.parser
-from flask_restplus import Resource, Namespace, reqparse, abort
+from flask_restplus import Resource, Namespace, abort
 from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
     SENSOR_STATUS, CAMERA_STATUS, COMMAND_SCHEMA, \
     add_models_to_namespace
@@ -45,7 +45,6 @@ class DeviceHeartbeat(Resource):
         try:
             device = model.Device.update_from_heartbeat(
                 name=data['name'],
-                state=model.Device.State[data['state']],
                 last_update=timestamp,  # pylint: disable=E0601
                 uptime=data['system_info']['uptime'],
                 total_ram=data['system_info']['total_ram'],
@@ -198,26 +197,13 @@ class DeviceHeartbeat(Resource):
 class DeviceList(Resource):
     """ Endpoint for interacting with lists of Devices """
 
-    get_parser = reqparse.RequestParser()
-    get_parser.add_argument('state', location='args',
-                            choices=[s.name for s in model.Device.State],
-                            help="Only return devices with this state.")
-
-    @NS.expect(get_parser, validate=True)
     @NS.marshal_with(DEVICE_SCHEMA, as_list=True)
     def get(self):
         """
-        get device
+        get list of known devices
 
-        can include an optional state string to filter
         """
-        args = self.get_parser.parse_args(strict=True)
-        params = {}
-
-        if args['state'] is not None:
-            params['state'] = model.Device.State[args.state]
-
-        return model.Device.get_devices(**params)
+        return model.Device.get_devices()
 
 
 @NS.route('/<int:device_id>')
@@ -242,3 +228,37 @@ class ByName(Resource):
         """ get a Device by name """
         device = model.Device.get_by_name(name)
         return device if device else abort(404, f"Device {name} Not Found")
+
+
+@NS.route('/stream/<int:device_id>')
+class LiveStream(Resource):
+    """endpoint for requesting live stream from device"""
+
+    @NS.response(404, "Device not found")
+    @NS.response(500, "Unable to request live stream (internal server error)")
+    @NS.response(503, "Live stream currently unavailable for device")
+    @NS.response(200, "Live stream requested")
+    def get(self, device_id):
+        """
+        Request that a device start (or continue) live stream.
+
+        If the control server knows the device does not have an active recording
+        session then a 503 (service unavailable) error will be returned,
+        otherwise the request will be relayed to the device at its next status
+        update.
+
+        This should be called periodically when the stream is being watched.
+        If, after a certain timeout (stream_keep_alive in the [MAIN] section of
+        the config file), the server does not get a request for a stream then
+        the device will stop the live stream to conserve network bandwidth.
+        """
+        device = model.Device.get_by_id(device_id)
+        if not device:
+            abort(404, f"Device {device_id} Not Found")
+
+        try:
+            device.request_live_stream()
+        except model.LTMSDatabaseException as e:
+            abort(500, str(e))
+        except LTMSControlServiceException:
+            abort(503, f"Live stream currently unavailable for {device.name}")

@@ -71,11 +71,6 @@ DEVICE_BASE_SCHEMA = Model('device_base', {
     'location': fields.String(
         description="location of device"
     ),
-    'state': fields.String(
-        enum=['IDLE', 'BUSY'], required=True, attribute=lambda d: d.state.name,
-        description=("Device State. BUSY (currently performing a task, e.g. "
-                     "recording) or IDLE"),
-    ),
     'sensor_status': fields.Nested(SENSOR_STATUS, required=True,
                                    attribute=lambda d: json.loads(
                                        d.sensor_status)),
@@ -96,5 +91,12 @@ DEVICE_SCHEMA = DEVICE_BASE_SCHEMA.clone('device', {
     'last_update': fields.DateTime(required=True),
     'session_id': fields.Integer(
         description="session ID of active recording session, null otherwise"
+    ),
+    'state': fields.String(
+        enum=['IDLE', 'BUSY', 'DOWN'], required=True,
+        attribute=lambda d: d.state().name,
+        description=("Device State. BUSY (currently performing a task, e.g. "
+                     "recording), IDLE, or DOWN "
+                     "(hasn't sent status update within expected time)"),
     )
 })
