@@ -84,7 +84,8 @@ class DeviceFaker(object):
             device['sensor_status']['camera']['duration'] = 0
         elif command['command_name'] == 'COMPLETE':
             device['sim_session_info'] = {}
-            device['session_id'] = 0
+            del device['session_id']
+            device['sensor_status']['camera']['duration'] = 0
 
     def simulate_heartbeat(self, device, time_delta):
         """
