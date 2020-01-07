@@ -75,7 +75,7 @@ class Device(UniqueMixin, BASE):
 
     @classmethod
     def get_devices(cls):
-        """ get list of devices, optionally filter by device state """
+        """ get list of known devices """
         return SESSION.query(cls).order_by(cls.name).all()
 
     @classmethod
