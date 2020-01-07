@@ -69,19 +69,22 @@ class DeviceFaker(object):
                 'release': "SIMULATOR"
             },
             'location': "B55-" + str(random.randint(2505, 2519)),
+            # this is extra info used by the simulator, but it will be ignored
+            # by the server
             'sim_session_info': {}
         }
 
     @classmethod
     def process_command(cls, device, command):
-        if command['command_name'] == "START":
+        if command['command_name'] == 'START':
             parameters = json.loads(command['parameters'])
             device['session_id'] = parameters['session_id']
             device['sim_session_info']['duration'] = parameters['duration']
             device['sensor_status']['camera']['recording'] = True
             device['sensor_status']['camera']['duration'] = 0
-
-
+        elif command['command_name'] == 'COMPLETE':
+            device['sim_session_info'] = {}
+            device['session_id'] = 0
 
     def simulate_heartbeat(self, device, time_delta):
         """
