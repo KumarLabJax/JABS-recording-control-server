@@ -86,6 +86,9 @@ class DeviceFaker(object):
             device['sim_session_info'] = {}
             del device['session_id']
             device['sensor_status']['camera']['duration'] = 0
+        elif command['command_name'] == 'STREAM':
+            device['sim_session_info']['stream'] = True
+            print(f"device {device['name']} stream")
 
     def simulate_heartbeat(self, device, time_delta):
         """

@@ -2,6 +2,7 @@
 this utilty file contains functions related to processing a device's state as
 and determining if we need to reply with a command for the device client
 """
+import enum
 import json
 from flask_restplus import abort
 
@@ -11,6 +12,12 @@ from src.utils.logging import get_module_logger
 
 LOGGER = get_module_logger()
 
+
+class Command(enum.Enum):
+    START = "START"
+    STOP = "STOP"
+    COMPLETE = "COMPLETE"
+    STREAM = "STREAM"
 
 def get_device_response(device, client_data):
     # get session ID included in message if present
@@ -41,7 +48,7 @@ def get_device_response(device, client_data):
             if device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
                 # we were waiting to hear from device to tell it to start
                 return {
-                           'command_name': "START",
+                           'command_name': Command.START.value,
                            'parameters': json.dumps({
                                'session_id': device.session_id,
                                'duration': device.recording_session.duration,
@@ -83,7 +90,7 @@ def get_device_response(device, client_data):
             if device.session_id != client_session:
                 # device and server are confused.
                 # tell device to stop what it is doing
-                return {'command_name': "STOP"}, 200
+                return {'command_name': Command.STOP.value}, 200
 
             if not client_data['sensor_status']['camera']['recording']:
                 # device is no longer recording
@@ -110,7 +117,7 @@ def get_device_response(device, client_data):
                             )
 
                     device.clear_session()
-                    return {'command_name': "COMPLETE"}, 200
+                    return {'command_name': Command.COMPLETE.value}, 200
 
                 except LTMSControlServiceException:
                     # couldn't update the device for some reason
@@ -121,7 +128,7 @@ def get_device_response(device, client_data):
             elif device_session_status.status == model.DeviceRecordingStatus.Status.CANCELED:
                 # we have a cancel request for this device,
                 # tell it to stop recording
-                return {'command_name': "STOP"}, 200
+                return {'command_name': Command.STOP.value}, 200
             elif device_session_status.status == model.DeviceRecordingStatus.Status.RECORDING:
                 # device is recording, update our recording status with
                 # the current recording duration
@@ -132,6 +139,9 @@ def get_device_response(device, client_data):
                     # couldn't update the device time for some reason
                     # don't treat this as fatal.
                     pass
+                # device is recording. should it also stream?
+                if device.is_stream_active():
+                    return {'command_name': Command.STREAM.value}
             elif device_session_status.status == model.DeviceRecordingStatus.Status.PENDING:
                 # device is sending first update after joining the session
                 try:
