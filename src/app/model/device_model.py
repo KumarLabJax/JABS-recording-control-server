@@ -205,7 +205,10 @@ class Device(UniqueMixin, BASE):
             raise LTMSDatabaseException("Unable to request live stream")
 
     def is_stream_active(self):
-        delta = datetime.utcnow() - Device.__add_tz(self.last_stream_request)
+        try:
+            delta = datetime.utcnow() - self.last_stream_request
+        except TypeError:
+            delta = Device.__add_tz(datetime.utcnow()) - self.last_stream_request
         if delta.total_seconds() > flask.current_app.config['STREAM_KEEP_ALIVE']:
             return False
         return True
