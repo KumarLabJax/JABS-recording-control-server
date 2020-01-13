@@ -143,8 +143,7 @@ class Device(UniqueMixin, BASE):
                     f"{last_update.isoformat()}"
                 )
 
-        device.last_update = datetime.utcnow()
-
+        device.last_update = Device.__add_tz(datetime.utcnow())
         for attr in kwargs:
             setattr(device, attr, kwargs[attr])
         try:
@@ -197,7 +196,7 @@ class Device(UniqueMixin, BASE):
         if not camera_status or not camera_status.get('recording'):
             raise LTMSControlServiceException("device camera is not active")
 
-        self.last_stream_request = datetime.utcnow()
+        self.last_stream_request = Device.__add_tz(datetime.utcnow())
         try:
             SESSION.commit()
         except SQLAlchemyError:
