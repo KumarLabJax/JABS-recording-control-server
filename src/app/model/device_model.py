@@ -1,10 +1,11 @@
 import enum
 import pytz
-from sqlalchemy import Column, BigInteger, String, Integer, Float, Enum, \
+from sqlalchemy import Column, BigInteger, String, Integer, Float, \
     TIMESTAMP, func, JSON, ForeignKey
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 import flask
+import json
 
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
@@ -32,19 +33,20 @@ class Device(UniqueMixin, BASE):
     # device location string, sent from device client
     location = Column(String)
 
-    # state of device (see State enum above for valid states)
-    state = Column(Enum(State), nullable=False)
-
     # timestamp of last update message from this device
     last_update = Column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
-        onupdate=func.current_timestamp(),
         nullable=False
     )
 
     # if the device is recording, this stores the ID of the recording session
     session_id = Column(Integer, ForeignKey('recording_session.id'))
+
+    # last stream request -- this timestamp records the last time a client
+    # requested the live stream for this device. If we don't get a request
+    # after a specified duration, the device will stop streaming
+    last_stream_request = Column(TIMESTAMP(timezone=True))
 
     # host information
     # - release is either Linux Kernel release string or nVidia Tegra release
@@ -63,18 +65,6 @@ class Device(UniqueMixin, BASE):
     total_disk = Column(BigInteger)     # total disk space in megabytes
     sensor_status = Column(JSON)        # JSON encoded sensor status
 
-    def state_to_str(self):
-        """ Convert the status enum into a string """
-        state_strings = {
-            self.State.IDLE: "Idle",
-            self.State.BUSY: "Busy",
-            self.State.DOWN: "Down"
-        }
-        try:
-            return state_strings[self.state]
-        except KeyError:
-            return "Unknown"
-
     @classmethod
     def unique_filter(cls, query, name):  # pylint: disable=W0222
         """
@@ -82,6 +72,21 @@ class Device(UniqueMixin, BASE):
         automatically create a new one if it does not exist
         """
         return query.filter(Device.name == name)
+
+    @classmethod
+    def get_devices(cls):
+        """ get list of known devices """
+        return SESSION.query(cls).order_by(cls.name).all()
+
+    @classmethod
+    def get_by_id(cls, device_id):
+        """ get a device by its ID """
+        return SESSION.query(cls).get(device_id)
+
+    @classmethod
+    def get_by_name(cls, name):
+        """ get a device by its name """
+        return SESSION.query(cls).filter(cls.name == name).one_or_none()
 
     @staticmethod
     def __add_tz(dt):
@@ -138,6 +143,8 @@ class Device(UniqueMixin, BASE):
                     f"{last_update.isoformat()}"
                 )
 
+        device.last_update = datetime.utcnow()
+
         for attr in kwargs:
             setattr(device, attr, kwargs[attr])
         try:
@@ -180,52 +187,42 @@ class Device(UniqueMixin, BASE):
                 SESSION.rollback()
                 raise LTMSDatabaseException("Unable to join session")
         else:
-            raise LTMSControlServiceException("device already part of another session")
+            raise LTMSControlServiceException(
+                "device already part of another session")
 
-    @classmethod
-    def get_devices(cls, state=None):
-        """ get list of devices, optionally filter by device state """
-        cls.check_for_down_devices()
-        query = SESSION.query(cls)
-        if state is not None:
-            query = query.filter(cls.state == state)
-        return query.order_by(cls.name).all()
+    def request_live_stream(self):
+        """ Request that this device stream live video """
+        # currently we can only enable live streaming if the device is recording
+        camera_status = json.loads(self.sensor_status).get('camera')
+        if not camera_status or not camera_status.get('recording'):
+            raise LTMSControlServiceException("device camera is not active")
 
-    @classmethod
-    def get_by_id(cls, device_id):
-        """ get a device by its ID """
-        cls.check_for_down_devices()
-        return SESSION.query(cls).get(device_id)
-
-    @classmethod
-    def get_by_name(cls, name):
-        """ get a device by its name """
-        cls.check_for_down_devices()
-        return SESSION.query(cls).filter(cls.name == name).one_or_none()
-
-    @classmethod
-    def check_for_down_devices(cls):
-        """
-        check for devices that we haven't heard from in a while and set their
-        state to down
-        """
-        since = cls.__add_tz(datetime.utcnow() - timedelta(
-            seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
-
-        try:
-            SESSION.query(cls).filter(cls.last_update < since).update(
-                {'state': cls.State.DOWN, 'last_update': cls.last_update})
-        except TypeError:
-            SESSION.rollback()
-            since = datetime.utcnow() - timedelta(
-                seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD'])
-            SESSION.query(cls).filter(cls.last_update < since).update(
-                {'state': cls.State.DOWN, 'last_update': cls.last_update})
-
+        self.last_stream_request = datetime.utcnow()
         try:
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
+            raise LTMSDatabaseException("Unable to request live stream")
+
+    def is_stream_active(self):
+        try:
+            delta = datetime.utcnow() - self.last_stream_request
+        except TypeError:
+            delta = Device.__add_tz(datetime.utcnow()) - self.last_stream_request
+        if delta.total_seconds() > flask.current_app.config['STREAM_KEEP_ALIVE']:
+            return False
+        return True
+
+    def state(self):
+        cutoff = self.__add_tz(datetime.utcnow() - timedelta(
+            seconds=flask.current_app.config['DOWN_DEVICE_THRESHOLD']))
+
+        if self.__add_tz(self.last_update) < cutoff:
+            return self.State.DOWN
+        elif self.session_id:
+            return self.State.BUSY
+        else:
+            return self.State.IDLE
 
 
 class DeviceSchema(MA.ModelSchema):

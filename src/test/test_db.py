@@ -39,7 +39,6 @@ class SqlalchemyDeviceModelTest(BaseDBTestCase):
 
         device1 = model.Device(
             name="TEST-DEVICE1",
-            state=model.Device.State.IDLE,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -60,7 +59,6 @@ class SqlalchemyDeviceModelTest(BaseDBTestCase):
 
         device2 = model.Device(
             name="TEST-DEVICE2",
-            state=model.Device.State.BUSY,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -115,7 +113,6 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
         device1 = model.Device(
             name="TEST-DEVICE1",
             release="fake device",
-            state=model.Device.State.IDLE,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -129,7 +126,6 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
         device2 = model.Device(
             name="TEST-DEVICE2",
             release="fake device",
-            state=model.Device.State.IDLE,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -151,28 +147,51 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
         self.session.remove()
 
     def test_new_session(self):
-
+        """Test creating new recording session"""
         device1 = model.Device.get_by_name("TEST-DEVICE1")
 
-        new_session = model.RecordingSession.create([device1], duration=600,
-                                                    file_prefix="test_prefix",
-                                                    fragment_hourly=True)
+        device_spec = [
+            {
+                'device_id': device1.id,
+                'filename_prefix': "test_prefix"
+            }
+        ]
+
+        new_session = model.RecordingSession.create(device_spec, duration=600,
+                                                    name="test session",
+                                                    fragment_hourly=True,
+                                                    target_fps=30,
+                                                    apply_filter=True)
 
         self.assertTrue(len(new_session.device_statuses) == 1)
         self.assertEqual(new_session.duration, 600)
         self.assertTrue(new_session.fragment_hourly)
+        self.assertEqual(new_session.target_fps, 30)
+        self.assertEqual(new_session.name, "test session")
 
     def test_change_device_status(self):
+        """Test changing device's status from PENDING to RECORDING"""
         device2 = model.Device.get_by_name("TEST-DEVICE2")
 
-        new_session = model.RecordingSession.create([device2], duration=600,
-                                                    file_prefix="test_prefix",
-                                                    fragment_hourly=True)
+        device_spec = [
+            {
+                'device_id': device2.id,
+                'filename_prefix': "test_prefix"
+            }
+        ]
+
+        new_session = model.RecordingSession.create(device_spec, duration=600,
+                                                    name="test session 2",
+                                                    fragment_hourly=True,
+                                                    target_fps=30,
+                                                    apply_filter=True)
 
         self.assertEqual(new_session.device_statuses[0].status,
                          model.DeviceRecordingStatus.Status.PENDING)
 
         new_session.device_statuses[0].status = model.DeviceRecordingStatus.Status.RECORDING
+
+        self.session.commit()
 
         self.assertEqual(new_session.device_statuses[0].status,
                          model.DeviceRecordingStatus.Status.RECORDING)

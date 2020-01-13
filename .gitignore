@@ -1,11 +1,6 @@
 *.py[cod]
 *.log
-.Rproj.user
 .idea*
-.RData
-.Rhistory
-*.Rproj
-.ipynb_checkpoints/
 *.env
 venv*
 __pycache__
