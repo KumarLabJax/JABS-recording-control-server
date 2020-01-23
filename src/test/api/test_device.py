@@ -28,7 +28,6 @@ class TestDevice(BaseDBTestCase):
 
         d1 = model.Device(
             name="TEST-DEVICE1",
-            state=model.Device.State.IDLE,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -49,7 +48,6 @@ class TestDevice(BaseDBTestCase):
 
         d2 = model.Device(
             name="TEST-DEVICE2",
-            state=model.Device.State.BUSY,
             last_update=datetime.utcnow(),
             uptime=128324,
             total_ram=8388608,
@@ -70,25 +68,6 @@ class TestDevice(BaseDBTestCase):
         response = self.client.get(self.__endpoint)
         self.assert200(response)
         self.assertTrue(len(response.json) == 2)
-
-    def test_device_list_by_state(self):
-        """
-        test the device endpoint filtering by state
-        """
-        response = self.client.get(self.__endpoint,
-                                   query_string={'state': 'IDLE'})
-        self.assert200(response)
-        data = response.json
-        self.assertTrue(len(data) == 1)
-        self.assertEqual(data[0]['name'], "TEST-DEVICE1")
-
-    def test_device_list_bad_state(self):
-        """
-        test the device endpoint filtering by state
-        """
-        response = self.client.get(self.__endpoint,
-                                   query_string={'state': 'THIS_IS_BAD'})
-        self.assert400(response)
 
     def test_device_by_id(self):
         """

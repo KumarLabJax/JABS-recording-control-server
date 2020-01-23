@@ -7,12 +7,12 @@ from src.utils.exceptions import LTMSControlServiceException
 
 
 AUTHORIZATIONS = {
-    'Access': {
+    'JWT Access': {
         'type': 'apiKey',
         'in': 'header',
         'name': 'Authorization'
     },
-    'Refresh': {
+    'JWT Refresh': {
         'type': 'apiKey',
         'in': 'header',
         'name': 'Authorization'

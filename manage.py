@@ -9,14 +9,17 @@ from flask_migrate import MigrateCommand
 from src.app import create_app
 from src.cli.run import RunCommand, GunicornRunCommand
 from src.cli.test import RunTestsCommand, RunTestsXMLCommand
-from src.cli.celery import StartCeleryWorkersCommand
 from src.cli.config import GenerateSecretsCommand, InitConfigCommand
+from src.cli.user import CreateAdmin
 
 MANAGER = Manager(create_app(os.getenv('FLASK_CONFIG') or 'dev'))
 
 # Run the application
 MANAGER.add_command('run', RunCommand())
 MANAGER.add_command('gunicorn_run', GunicornRunCommand())
+
+# Create initial admin user
+MANAGER.add_command('create_admin', CreateAdmin())
 
 # Perform database operations
 MANAGER.add_command('db', MigrateCommand)

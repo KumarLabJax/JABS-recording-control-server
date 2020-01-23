@@ -45,42 +45,11 @@ class Config:
     DOWN_DEVICE_THRESHOLD = int(_CFG.get('MAIN', 'DOWN_DEVICE_THRESHOLD'))
     STREAM_KEEP_ALIVE = int(_CFG.get('MAIN', 'STREAM_KEEP_ALIVE'))
 
+    SMTP = _CFG.get('EMAIL', 'SMTP')
+    REPLY_TO = _CFG.get('EMAIL', 'REPLY_TO')
+
     ERROR_404_HELP = False
     RESTPLUS_MASK_SWAGGER = False
-
-    # TODO: Fill in celery config
-    # Celery
-    CELERY_BROKER_URL = _CFG.get('CELERY', 'CELERY_BROKER_URL')
-    CELERY_RESULT_BACKEND = _CFG.get('CELERY', 'CELERY_RESULT_BACKEND')
-    CELERY_TRACK_STARTED = True
-
-    # TODO: Fill in LDAP info
-    # LDAP Config
-    LDAP = {
-        'PW': _CFG.get('LDAP', 'PASSWORD'),
-        'USER': _CFG.get('LDAP', 'USER'),
-        'HOST': _CFG.get('LDAP', 'HOST'),
-        'BASE': _CFG.get('LDAP', 'BASE'),
-        'USER_DOMAIN': _CFG.get('LDAP', 'USER_DOMAIN'),
-        'SEARCH_FILTER': _CFG.get('LDAP', 'SEARCH_FILTER'),
-        'SEARCH_TIMEOUT': _CFG.get('LDAP', 'SEARCH_TIMEOUT')
-    }
-
-    # TODO: Fill in LDAP info
-    # LDAP3 Config
-    LDAP3 = {
-        'PW': _CFG.get('LDAP3', 'PASSWORD'),
-        'USER': _CFG.get('LDAP3', 'USER'),
-        'HOST': _CFG.get('LDAP3', 'HOST'),
-        'BASE': _CFG.get('LDAP3', 'BASE'),
-        'USER_DOMAIN': _CFG.get('LDAP3', 'USER_DOMAIN'),
-        'SEARCH_FILTER': _CFG.get('LDAP3', 'SEARCH_FILTER'),
-        'SEARCH_TIMEOUT': _CFG.get('LDAP3', 'SEARCH_TIMEOUT'),
-        'STRATEGY': _CFG.get('LDAP3', 'STRATEGY'),
-        'MOCK_ENTRIES': _CFG.get('LDAP3', 'MOCK_ENTRIES'),
-        'MOCK_INFO': _CFG.get('LDAP3', 'MOCK_INFO'),
-        'MOCK_SCHEMA': _CFG.get('LDAP3', 'MOCK_SCHEMA')
-    }
 
 
 class DevelopmentConfig(Config):

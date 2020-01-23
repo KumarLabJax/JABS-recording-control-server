@@ -1,9 +1,6 @@
 """
 The root of our sqlalchemy code
 """
-
-
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
@@ -24,10 +21,15 @@ class LTMSDatabaseException(LTMSControlServiceException):
     """ Base exception class for exceptions defined in the model module """
 
 
+class PasswordFormatException(LTMSControlServiceException):
+    """password doesn't meet our requirements"""
+
 # this needs to be imported after the BASE/SESSION and exceptions are setup
 # pylint: disable=wrong-import-position
 from .device_model import Device
 from .recording_session_model import RecordingSession, DeviceRecordingStatus
+from .user_model import User
+from .simple_auth_model import SimpleAuth, MIN_PASSWORD_LEN
 # pylint: enable=wrong-import-position
 
 
