@@ -17,8 +17,11 @@ pip install -r requirements.txt
 ##### Config
 Edit the config file to specify server specific values.
 
-To autogenerate `jax-mba-service.config`, or to regenerate JWT secrets run:
+To autogenerate `jax-mba-service.config` run:
 ```python manage.py init_config```
+
+To generate new secret keys for an existing config file, run 
+```python manage.py create_secrets```
 
 
 ## JAX Mouse Behavior Analysis Control Service Management
