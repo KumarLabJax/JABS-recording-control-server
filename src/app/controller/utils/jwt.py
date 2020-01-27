@@ -3,7 +3,7 @@ JWT Utilities for Controller
 """
 from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_claims, verify_jwt_in_request_optional
-from src.utils.exceptions import LTMSControlServiceException
+from src.utils.exceptions import JaxMBAControlServiceException
 
 
 AUTHORIZATIONS = {
@@ -20,7 +20,7 @@ AUTHORIZATIONS = {
 }
 
 
-class UrlJwtMismatch(LTMSControlServiceException):
+class UrlJwtMismatch(JaxMBAControlServiceException):
     """
     Url and jwt don't agree about something
     """

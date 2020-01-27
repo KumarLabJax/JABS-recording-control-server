@@ -54,7 +54,7 @@ class UserPassword(Resource):
             model.SimpleAuth.update_password(auth_data, payload['new_password'])
         except model.PasswordFormatException as e:
             abort(400, str(e))
-        except model.LTMSDatabaseException as e:
+        except model.JaxMBADatabaseException as e:
             abort(500, str(e))
 
         return '', 204
@@ -107,7 +107,7 @@ class InviteUser(Resource):
             # user does not already exist, create
             try:
                 user = model.SimpleAuth.create_user(args['email'], admin=args['admin'])
-            except model.LTMSDatabaseException:
+            except model.JaxMBADatabaseException:
                 abort(400, 'unable to create user')
         else:
             new_user = False
@@ -118,7 +118,7 @@ class InviteUser(Resource):
             #resending invite, generate new password reset token
             try:
                 user_auth.generate_reset_token()
-            except model.LTMSDatabaseException:
+            except model.JaxMBADatabaseException:
                 abort(400, 'unable to create password reset token')
 
         # send invitation
@@ -197,7 +197,7 @@ class ResetPasswordRequest(Resource):
         user_auth = model.SimpleAuth.get_user_auth(user.id)
         try:
             user_auth.generate_reset_token()
-        except model.LTMSDatabaseException:
+        except model.JaxMBADatabaseException:
             abort(400, 'unable to create password reset token')
 
 

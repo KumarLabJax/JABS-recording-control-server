@@ -14,7 +14,7 @@ from src.utils.config_tools import CONFIG_FILE_NAME, generate_secrets, create_em
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-# Try to read the ltm_control_service.config file
+# Try to read the jax-mba-service.config file
 _CFG = configparser.ConfigParser(allow_no_value=True)
 _CFG_READ = _CFG.read(CONFIG_FILE_NAME)
 
@@ -59,7 +59,7 @@ class DevelopmentConfig(Config):
     LOG_LEVEL = 'DEBUG'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + \
                               os.path.join(BASEDIR,
-                                           'ltmcs.dev.sqlite.db')
+                                           'jax-mba-service.dev.sqlite.db')
 
 
 class TestingConfig(Config):
@@ -72,7 +72,7 @@ class TestingConfig(Config):
     PRESERVE_CONTEXT_ON_EXCEPTION = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + \
                               os.path.join(BASEDIR,
-                                           'ltmcs.test.sqlite.db')
+                                           'jax-mba-service.test.sqlite.db')
 
 
 class ProductionConfig(Config):

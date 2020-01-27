@@ -11,7 +11,7 @@ from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
     SENSOR_STATUS, CAMERA_STATUS, COMMAND_SCHEMA, \
     add_models_to_namespace
 import src.app.model as model
-from src.utils.exceptions import LTMSControlServiceException
+from src.utils.exceptions import JaxMBAControlServiceException
 from src.utils.logging import get_module_logger
 from .utils.device_command import get_device_response
 
@@ -60,7 +60,7 @@ class DeviceHeartbeat(Resource):
                 release=data['system_info']['release'],
                 location=data.get('location')
             )
-        except LTMSControlServiceException as err:
+        except JaxMBAControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
 
         return get_device_response(device, data)
@@ -140,7 +140,7 @@ class LiveStream(Resource):
 
         try:
             device.request_live_stream()
-        except model.LTMSDatabaseException as e:
+        except model.JaxMBADatabaseException as e:
             abort(500, str(e))
-        except LTMSControlServiceException:
+        except JaxMBAControlServiceException:
             abort(503, f"Live stream currently unavailable for {device.name}")

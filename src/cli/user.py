@@ -2,7 +2,7 @@ import getpass
 
 from flask_script import Command
 
-from src.app.model import SimpleAuth, MIN_PASSWORD_LEN, LTMSDatabaseException
+from src.app.model import SimpleAuth, MIN_PASSWORD_LEN, JaxMBADatabaseException
 
 
 class CreateAdmin(Command):
@@ -27,7 +27,7 @@ class CreateAdmin(Command):
         else:
             try:
                 SimpleAuth.create_admin(email, password)
-            except LTMSDatabaseException as e:
+            except JaxMBADatabaseException as e:
                 print(e)
                 return 1
         return 0

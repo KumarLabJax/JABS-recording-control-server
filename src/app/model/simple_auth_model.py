@@ -7,7 +7,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import relationship
 
-from . import BASE, SESSION, LTMSDatabaseException, PasswordFormatException
+from . import BASE, SESSION, JaxMBADatabaseException, PasswordFormatException
 from . import User
 from src.utils.exceptions import CredentialError
 
@@ -65,7 +65,7 @@ class SimpleAuth(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to add new user")
+            raise JaxMBADatabaseException("unable to add new user")
 
         return user_auth.user
 
@@ -105,7 +105,7 @@ class SimpleAuth(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to update password")
+            raise JaxMBADatabaseException("unable to update password")
 
     def check_password(self, password):
         return self.hash_str(password + self.salt) == self.password_hash
@@ -124,7 +124,7 @@ class SimpleAuth(BASE):
                 self.password_reset_token_expiration = \
                     datetime.datetime.utcnow() + datetime.timedelta(days=1)
         except SQLAlchemyError:
-            raise LTMSDatabaseException("unable to create password reset token")
+            raise JaxMBADatabaseException("unable to create password reset token")
 
     def clear_reset_token(self):
         try:
@@ -132,5 +132,5 @@ class SimpleAuth(BASE):
                 self.password_reset_token = None
                 self.password_reset_token_expiration = None
         except SQLAlchemyError:
-            raise LTMSDatabaseException(
+            raise JaxMBADatabaseException(
                 "unable to clear password reset token")

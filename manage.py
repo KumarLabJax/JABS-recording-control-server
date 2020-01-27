@@ -24,7 +24,7 @@ MANAGER.add_command('create_admin', CreateAdmin())
 # Perform database operations
 MANAGER.add_command('db', MigrateCommand)
 
-# Manage the 'ltm_control_service.config' file
+# Manage the 'jax-mba-service.config' file
 MANAGER.add_command('create_secrets', GenerateSecretsCommand)
 MANAGER.add_command('init_config', InitConfigCommand)
 

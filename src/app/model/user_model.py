@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Boolean
 from sqlalchemy.exc import SQLAlchemyError
 
-from . import BASE, SESSION, LTMSDatabaseException
+from . import BASE, SESSION, JaxMBADatabaseException
 
 
 class User(BASE):
@@ -30,7 +30,7 @@ class User(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to remove user from database")
+            raise JaxMBADatabaseException("unable to remove user from database")
 
     @classmethod
     def get(cls, uid):

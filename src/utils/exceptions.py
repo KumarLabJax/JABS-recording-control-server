@@ -3,11 +3,11 @@ Base exceptions namespace for the app
 """
 
 
-class LTMSControlServiceException(Exception):
+class JaxMBAControlServiceException(Exception):
     """
-    Base exception for the Long-Term Monitoring System Control Service app
+    Base exception for the JAX Mouse Behavior Analysis Control Service app
     """
 
 
-class CredentialError(LTMSControlServiceException):
+class CredentialError(JaxMBAControlServiceException):
     """ user not found in database """

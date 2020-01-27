@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 import enum
 
 from . import BASE, MA, SESSION
-from . import LTMSDatabaseException
+from . import JaxMBADatabaseException
 from src.utils.logging import get_module_logger
 from .device_model import Device
 
@@ -72,7 +72,7 @@ class RecordingSession(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to archive recording session")
+            raise JaxMBADatabaseException("unable to archive recording session")
 
     def cancel(self):
         for ds in self.device_statuses:
@@ -83,7 +83,7 @@ class RecordingSession(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to cancel recording session")
+            raise JaxMBADatabaseException("unable to cancel recording session")
 
     def update_status(self):
         if self.status == self.Status.IN_PROGRESS:
@@ -96,7 +96,7 @@ class RecordingSession(BASE):
                 SESSION.commit()
             except SQLAlchemyError:
                 SESSION.rollback()
-                raise LTMSDatabaseException(
+                raise JaxMBADatabaseException(
                     "unable to cancel recording session")
 
     @classmethod
@@ -158,7 +158,7 @@ class RecordingSession(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to commit new session")
+            raise JaxMBADatabaseException("unable to commit new session")
 
         return new_session
 
@@ -215,7 +215,7 @@ class DeviceRecordingStatus(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to update recording_time")
+            raise JaxMBADatabaseException("unable to update recording_time")
 
     def update_status(self, new_status, message=None):
         self.status = new_status
@@ -224,7 +224,7 @@ class DeviceRecordingStatus(BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("unable to update status")
+            raise JaxMBADatabaseException("unable to update status")
 
     def remove_from_session(self):
         if self.status == self.Status.RECORDING or self.status == self.Status.PENDING:
