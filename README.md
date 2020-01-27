@@ -137,7 +137,9 @@ command to find the location of pg_hba.conf:
 
 Then edit this file:
 
+```text
 sudo vi <PATH TO pg_hba.conf>
+```
 
 and add the following line:
 
