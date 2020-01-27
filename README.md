@@ -38,19 +38,46 @@ python manage.py --help
 usage: manage.py [-?] {run,db,start_workers,test,test_xml,shell,runserver} ...
 
 positional arguments:
-  {run,db,start_workers,test,test_xml,shell,runserver}
+  {run,gunicorn_run,create_admin,db,create_secrets,init_config,test,test_xml,shell,runserver}
     run                 The main entrypoint to running the app :return: None
+    gunicorn_run        Gunicorn version of RunCommand for use in the docker
+                        container
+    create_admin        create initial admin user
     db                  Perform database migrations
-    start_workers       Start the celery worker(s)
-    test                Run unit tests
+    create_secrets      If not yet set, set the secret keys in config.ini to
+                        randomly generated 32bit hex values :return: None
+    init_config         Overwrite current config with blank one, or create new
+                        config if there is none, then generate config secrets
+                        :return: None
+    test                Run all or some tests
     test_xml            Runs the unit tests specifically for bamboo CI/CD
     shell               Runs a Python shell inside Flask application context.
     runserver           Runs the Flask development server i.e. app.run()
+
 
 optional arguments:
   -?, --help            show this help message and exit
 
 ```
+
+### Configure initial administrator account
+
+At least one initial administrator account needs to be created in order to 
+access the web-based user interface. Once an initial administrator account is 
+created additional users can be invited to access the application through the 
+UI.
+
+After activating the Python virtual environment and creating the configuration
+file, you can use the `python manage.py create_admin` command to add an admin 
+user to the database. Unless specified otherwise, this will add the user to the 
+dev database. The configuration (dev, prod, or test) can be specified with the
+FLASK_CONFIG environment variable. If you are adding the admin user to the
+production database, you'll need to follow the steps below for configuring
+Postgresql.
+
+Example adding an admin account to the production database:
+`FLASK_CONFIG=prod python manage.py create_admin`
+
 
 ## Configuring for Production
 
@@ -75,7 +102,9 @@ setup a service account for uwsgi to use to run the Flask app
 useradd --system jax-mba
 ```
 
-#### Postgresql 
+#### Postgresql
+
+##### Create database and db user
 
 First, as the postgres user, create a new database, schema, and a user. You will
 need the username, database name, and password you choose here to complete the
@@ -94,6 +123,8 @@ postgres-# grant all privileges on database jax_mba_db to jaxmba ;
 \q
 exit
 ```
+
+##### configure to allow TCP access to database for user
 
 Next you will need to edit the pg_hba.conf file so that Postgresql will allow
 the database user to connect with a username and password. Run the following 
@@ -119,6 +150,20 @@ effect.
 Create a python virtual environment and then generate a config file template as 
 described above.
 
+Edit the generated config file and fill out any empty parameters. For the 
+database section, use the database, user, and password set during the Postgresql
+configuration.
+
+```text
+[DATABASE]
+dialect = postgres
+username = jaxmba
+password = <jaxmba user password>
+host = localhost
+port = 5432
+database = jax_mba_db
+```
+
 To project sensitive information such as the Flask and JWT secrets, and the 
 postgresql password, this config file should not be world-readable if anyone
 not authorized to have this information has access to the server. In this case, 
@@ -133,9 +178,9 @@ edit to reflect your installation.
 
 #### Systemd service 
 
-Configure the Flask service to run as a Systemd service. This template can serve
-as a starting point for a Systemd unit file. Edit to reflect your install 
-location and virtual environment name and copy it to 
+Configure the Flask service to run vi uWSGI  as a Systemd service. This template
+can serve as a starting point for a Systemd unit file. Edit to reflect your
+install location and virtual environment name and copy it to 
 /etc/systemd/system/jax-mba.service
 
 ```text
@@ -150,7 +195,7 @@ After=network.target
 TimeoutStartSec=0
 RestartSec=10
 Restart=always
-ExecStart=/usr/bin/bash -c 'cd /opt/compsci/jax-mba-service; source venv.jax-mba-service/bin/activate; uwsgi --ini deploy/uwsgi.ini'
+ExecStart=/usr/bin/bash -c 'cd /<INSTALL LOCATION>; source venv.jax-mba-service/bin/activate; uwsgi --ini deploy/uwsgi.ini'
 
 [Install]
 WantedBy=multi-user.target
@@ -249,5 +294,10 @@ http {
         }
     }
 }
+
+Restart Nginx to have the configuration take affect. You can test that Nginx and
+uWSGI are working together by connecting to the hosted Swagger API documentation:
+
+http://servername/api  
 
 ```
