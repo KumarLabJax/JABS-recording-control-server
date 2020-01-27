@@ -16,15 +16,16 @@ from .user_controller import NS as user_ns
 
 API_BLUEPRINT = Blueprint('api', __name__)
 DESCRIPTION = (
-    "Flask Service to coordinate the centralized control of multiple long-term "
-    "monitoring systems"
+    "Flask Service to coordinate the centralized control of multiple "
+    "JAX Mouse Behavior Analysis enclosures"
 )
 API = Api(API_BLUEPRINT,
-          title='Long-Term Monitoring System Control Service',
+          title='JAX Mouse Behavior Analysis Control Service',
           version='0.0.1',
           description=DESCRIPTION,
 
           # Change this to 'Bearer Auth' to require token by default
+          # we currently set it on a case by case basis
           security=None,
           authorizations=AUTHORIZATIONS,
           )
