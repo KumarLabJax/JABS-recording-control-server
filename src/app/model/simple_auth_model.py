@@ -12,6 +12,7 @@ from . import User
 from src.utils.exceptions import CredentialError
 
 MIN_PASSWORD_LEN = 8
+RESET_TOKEN_VALID_DAYS = 1
 
 
 class SimpleAuth(BASE):
@@ -122,9 +123,11 @@ class SimpleAuth(BASE):
             with SESSION.begin_nested():
                 self.password_reset_token = str(uuid1())
                 self.password_reset_token_expiration = \
-                    datetime.datetime.utcnow() + datetime.timedelta(days=1)
+                    datetime.datetime.utcnow() + \
+                    datetime.timedelta(days=RESET_TOKEN_VALID_DAYS)
         except SQLAlchemyError:
-            raise JaxMBADatabaseException("unable to create password reset token")
+            raise JaxMBADatabaseException(
+                "unable to create password reset token")
 
     def clear_reset_token(self):
         try:

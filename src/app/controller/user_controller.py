@@ -83,6 +83,8 @@ class InviteUser(Resource):
     </p>
     
     <p>Please follow this link to set your password: ${URL}</p>
+    
+    <p>This link will expire in ${EXP} hours.</p>
     """))
 
     @jwt_required
@@ -131,7 +133,10 @@ class InviteUser(Resource):
         try:
             email_notifier.send(
                 to=args['email'],
-                message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
+                message=self.__MESSAGE_TEMPLATE.substitute(
+                    URL=url,
+                    EXP=model.simple_auth_model.RESET_TOKEN_VALID_DAYS * 24
+                ),
                 subject="JAX Mouse Behavior Analysis invitation"
             )
         except Exception as e:
@@ -180,6 +185,8 @@ class ResetPasswordRequest(Resource):
 
         <p>Please follow this link to set your password: ${URL}</p>
         
+        <p>This link will expire in ${EXP} hours.</p>
+        
         <p>If you did not make this request, you can ignore this email.</p>
         """))
 
@@ -213,7 +220,10 @@ class ResetPasswordRequest(Resource):
         try:
             email_notifier.send(
                 to=user.email_address,
-                message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
+                message=self.__MESSAGE_TEMPLATE.substitute(
+                    URL=url,
+                    EXP=model.simple_auth_model.RESET_TOKEN_VALID_DAYS * 24
+                ),
                 subject="JAX Mouse Behavior Analysis password reset"
             )
         except:
