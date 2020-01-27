@@ -60,20 +60,20 @@ class UserPassword(Resource):
         return '', 204
 
 
-@NS.route('/invite_user')
+@NS.route('/invite')
 class InviteUser(Resource):
 
     parser = reqparse.RequestParser(bundle_errors=True)
     parser.add_argument(
-        'email', type=inputs.email(), location='args', required=True,
+        'email', type=inputs.email(), location='json', required=True,
         help="Email address to send invitation to."
     )
     parser.add_argument(
-        'admin', type=inputs.boolean, location='args', default=False,
+        'admin', type=inputs.boolean, location='json', default=False,
         help="Give new user admin role?"
     )
     parser.add_argument(
-        'url', type=inputs.url, location='args', required=True,
+        'url', type=inputs.url, location='json', required=True,
         help="URL for user to complete password reset."
     )
 
@@ -126,13 +126,16 @@ class InviteUser(Resource):
             smtp_server=flask.current_app.config['SMTP'],
             admin_email=flask.current_app.config['REPLY_TO']
         )
-        url = urllib.parse.urljoin(args['url'], f"{user.id}/{user_auth.password_reset_token}")
+        url = urllib.parse.urljoin(args['url'] + '/', f"{user.id}/{user_auth.password_reset_token}")
 
-        email_notifier.send(
-            to=args['email'],
-            message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
-            subject="JAX Mouse Behavior Analysis invitation"
-        )
+        try:
+            email_notifier.send(
+                to=args['email'],
+                message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
+                subject="JAX Mouse Behavior Analysis invitation"
+            )
+        except Exception as e:
+            abort(400, f"Error sending email")
 
         return '', 204
 
@@ -200,17 +203,20 @@ class ResetPasswordRequest(Resource):
 
         # generate URL for UI page to complete reset
         url = urllib.parse.urljoin(
-            args['url'], f"?uid={user.id}&token={user_auth.password_reset_token}")
-        # send invitation
+            args['url'] + '/', f"{user.id}/{user_auth.password_reset_token}")
         # send invitation
         email_notifier = EmailNotifier(
             smtp_server=flask.current_app.config['SMTP'],
             admin_email=flask.current_app.config['REPLY_TO']
         )
-        email_notifier.send(
-            to=user.email_address,
-            message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
-            subject="JAX Mouse Behavior Analysis password reset"
-        )
+
+        try:
+            email_notifier.send(
+                to=user.email_address,
+                message=self.__MESSAGE_TEMPLATE.substitute(URL=url),
+                subject="JAX Mouse Behavior Analysis password reset"
+            )
+        except:
+            abort(400, "unable to send email")
 
         return '', 202

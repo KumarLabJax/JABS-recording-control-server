@@ -46,7 +46,8 @@ class UserLogin(Resource):
 
         identity = {
             'uid': user.id,
-            'email_address': user.email_address
+            'email_address': user.email_address,
+            'admin': user.admin
         }
 
         access_token = create_access_token(identity=identity)

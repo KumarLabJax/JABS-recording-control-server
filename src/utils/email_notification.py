@@ -126,8 +126,6 @@ class EmailNotifier:
         msg.attach(part1)
         msg.attach(part2)
 
-        try:
-            with smtplib.SMTP(self.smtp_server) as smtp:
-                smtp.sendmail(self.reply_to, to, msg.as_string())
-        except Exception as e:
-            print("Error sending email: {}".format(e), file=sys.stderr)
+        with smtplib.SMTP(self.smtp_server) as smtp:
+            smtp.sendmail(self.reply_to, to, msg.as_string())
+
