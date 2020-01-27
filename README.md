@@ -210,8 +210,9 @@ The last step in configuring the web service is to configure Nginx to act as a
 proxy for API requests. The following is a starting point for a Nginx config
 file. This file assumes that this Nginx server will also be hosting the static
 content for the UI. You will need to change the `root` parameter to point to 
-the directory with the UI index.html file. `uwsgi_pass` will also have to be 
-set to the location that you've configured uWSGI to open the socket.
+the directory with the UI index.html file. `uwsgi_pass` (multiple locations in
+the file) will also have to be set to the location that you've configured uWSGI
+to open the socket.
 
 Note that for a production configuration you will want to setup SSL to avoid 
 sending passwords over plain text.
