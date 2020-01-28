@@ -301,9 +301,9 @@ http {
     }
 }
 
+```
+
 Restart Nginx to have the configuration take affect. You can test that Nginx and
 uWSGI are working together by connecting to the hosted Swagger API documentation:
 
 http://servername/api  
-
-```
