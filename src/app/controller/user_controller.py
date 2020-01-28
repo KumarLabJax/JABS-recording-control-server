@@ -25,6 +25,11 @@ PASSWORD_RESET_MODEL = NS.model('password_reset', {
     'password': fields.String(required=True)
 })
 
+PASSWORD_RESET_REQUEST_MODEL = NS.model('request_password_reset', {
+    'email': fields.String(required=True),
+    'url': fields.Url(required=True)
+})
+
 
 @NS.route('/<int:uid>/change_password')
 class UserPassword(Resource):
@@ -172,13 +177,8 @@ class ResetPassword(Resource):
         return '', 204
 
 
-@NS.route('/<int:uid>/send_reset')
+@NS.route('/send_pw_reset')
 class ResetPasswordRequest(Resource):
-    parser = reqparse.RequestParser(bundle_errors=True)
-    parser.add_argument(
-        'url', type=inputs.url, location='args', required=True,
-        help="URL for user to complete password reset."
-    )
 
     __MESSAGE_TEMPLATE = Template(textwrap.dedent("""\
         <p>A password reset was requested for this email address.</p>
@@ -190,16 +190,15 @@ class ResetPasswordRequest(Resource):
         <p>If you did not make this request, you can ignore this email.</p>
         """))
 
-    @NS.response(400, 'unable to create password reset token')
-    @NS.response(404, 'user not found')
     @NS.response(202, 'accepted')
-    @NS.expect(parser)
-    def post(self, uid):
-        user = model.User.get(uid)
-        if not user:
-            abort(404, 'user not found')
+    @NS.expect(PASSWORD_RESET_REQUEST_MODEL, validate=True)
+    def post(self):
+        user = model.User.lookup(NS.payload['email'])
 
-        args = ResetPasswordRequest.parser.parse_args()
+        # don't let the requester know the email address is not valid to
+        # prevent fishing for valid accounts
+        if not user:
+            return '', 202
 
         user_auth = model.SimpleAuth.get_user_auth(user.id)
         try:
@@ -210,7 +209,7 @@ class ResetPasswordRequest(Resource):
 
         # generate URL for UI page to complete reset
         url = urllib.parse.urljoin(
-            args['url'] + '/', f"{user.id}/{user_auth.password_reset_token}")
+            NS.payload['url'] + '/', f"{user.id}/{user_auth.password_reset_token}")
         # send invitation
         email_notifier = EmailNotifier(
             smtp_server=flask.current_app.config['SMTP'],
@@ -227,6 +226,6 @@ class ResetPasswordRequest(Resource):
                 subject="JAX Mouse Behavior Analysis password reset"
             )
         except:
-            abort(400, "unable to send email")
+            abort(500, "unable to send email")
 
         return '', 202
