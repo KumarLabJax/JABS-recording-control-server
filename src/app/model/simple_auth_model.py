@@ -2,6 +2,7 @@
 from hashlib import sha512
 from uuid import uuid1
 import datetime
+import pytz
 
 from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.exc import SQLAlchemyError
@@ -116,6 +117,8 @@ class SimpleAuth(BASE):
 
     def token_is_expired(self):
         now = datetime.datetime.utcnow()
+        if self.password_reset_token_expiration.tzinfo is not None:
+            now = now.replace(tzinfo=pytz.UTC)
         return self.password_reset_token_expiration < now
 
     def generate_reset_token(self):
