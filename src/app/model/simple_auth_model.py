@@ -119,12 +119,14 @@ class SimpleAuth(BASE):
         return self.password_reset_token_expiration < now
 
     def generate_reset_token(self):
+        self.password_reset_token = str(uuid1())
+        self.password_reset_token_expiration = \
+            datetime.datetime.utcnow() + \
+            datetime.timedelta(days=RESET_TOKEN_VALID_DAYS)
         try:
-            with SESSION.begin_nested():
-                self.password_reset_token = str(uuid1())
-                self.password_reset_token_expiration = \
-                    datetime.datetime.utcnow() + \
-                    datetime.timedelta(days=RESET_TOKEN_VALID_DAYS)
+            SESSION.commit()
+        except SQLAlchemyError:
+            SESSION.rollback()
         except SQLAlchemyError:
             raise JaxMBADatabaseException(
                 "unable to create password reset token")
