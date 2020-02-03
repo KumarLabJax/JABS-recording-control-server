@@ -217,12 +217,12 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
 
         device_spec = [
             {
-                'device_id': device2.id,
-                'filename_prefix': "test_prefix2"
-            },
-            {
                 'device_id': device1.id,
                 'filename_prefix': "test_prefix"
+            },
+            {
+                'device_id': device2.id,
+                'filename_prefix': "test_prefix2"
             },
             {
                 'device_id': device3.id,
