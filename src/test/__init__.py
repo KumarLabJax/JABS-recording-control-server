@@ -20,7 +20,6 @@ class BaseTestCase(TestCase):
     def create_app(self):
         app = create_app(self.__config_name__)
         app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
-        app.config['LDAP3']['STRATEGY'] = 'MOCK_SYNC'
         self.engine = app.config['db_engine']
         self.session = SESSION
         return app
