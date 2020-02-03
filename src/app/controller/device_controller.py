@@ -109,7 +109,6 @@ class ByName(Resource):
         return device if device else abort(404, f"Device {name} Not Found")
 
 
-
 @NS.route('/stream/<int:device_id>')
 class LiveStream(Resource):
     """endpoint for requesting live stream from device"""

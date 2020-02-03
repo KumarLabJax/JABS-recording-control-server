@@ -33,15 +33,18 @@ PASSWORD_RESET_REQUEST_MODEL = NS.model('request_password_reset', {
 
 @NS.route('/<int:uid>/change_password')
 class UserPassword(Resource):
+    """
+    route for a user to manage their password
+    """
 
     @jwt_required
     @NS.doc(security='JWT Access')
     @NS.expect(PASSWORD_CHANGE_MODEL, validate=True)
     @NS.response(204, 'password changed')
+    @NS.response(403, 'identity in jwt token does not match uid')
     def put(self, uid):
         """
         change a user's password
-        :return:
         """
         identity = get_jwt_identity()
         if identity['uid'] != uid:
@@ -67,6 +70,9 @@ class UserPassword(Resource):
 
 @NS.route('/invite')
 class InviteUser(Resource):
+    """
+    Invite a user to use the app.
+    """
 
     parser = reqparse.RequestParser(bundle_errors=True)
     parser.add_argument(
@@ -98,6 +104,16 @@ class InviteUser(Resource):
     @NS.response(401, 'Unauthorized')
     @NS.expect(parser)
     def post(self):
+        """
+        Send an invitation to a user identified by email address.
+
+        If the user does not exist, they will be added to the database. For both
+        new and existing users a password reset token will be generated and
+        emailed to them.
+
+        This endpoint requires admin privs.
+        """
+
         identity = get_jwt_identity()
         current_user = model.User.get(identity['uid'])
         new_user = True
@@ -152,24 +168,38 @@ class InviteUser(Resource):
 
 @NS.route('/<int:uid>/reset_password/<token>')
 class ResetPassword(Resource):
+    """
+    route for resetting password
+    """
 
     @NS.expect(PASSWORD_RESET_MODEL)
     @NS.response(404, 'user not found')
     @NS.response(401, 'token not valid')
     @NS.response(204, 'password reset')
     def post(self, uid, token):
+        """
+        Reset a user password. Requires a token, which would have been emailed
+        to the the user.
+
+        :param uid: id of user resetting password
+        :param token: password reset token
+        """
+
         user = model.User.get(uid)
         if not user:
             abort(404, 'user not found')
 
         user_auth = model.SimpleAuth.get_user_auth(user.id)
 
+        # does the reset token match the most recently generated
         if not user_auth.check_reset_token(token):
             abort(401, 'token not valid')
 
+        # has the token expired?
         if user_auth.token_is_expired():
             abort(401, 'token is expired')
 
+        # everything checks out, try to update the password
         try:
             user_auth.update_password(NS.payload['password'])
         except model.PasswordFormatException as e:
@@ -179,6 +209,9 @@ class ResetPassword(Resource):
 
 @NS.route('/send_pw_reset')
 class ResetPasswordRequest(Resource):
+    """
+    route for requesting a password reset token
+    """
 
     __MESSAGE_TEMPLATE = Template(textwrap.dedent("""\
         <p>A password reset was requested for this email address.</p>
@@ -191,8 +224,18 @@ class ResetPasswordRequest(Resource):
         """))
 
     @NS.response(202, 'accepted')
+    @NS.response(500, 'server error')
     @NS.expect(PASSWORD_RESET_REQUEST_MODEL, validate=True)
     def post(self):
+        """
+        request a password reset token by email
+
+        This endpoint is used to initiate the password reset process if a user
+        does not remember their password. The user submits the request with
+        their email address. If the email address matches an existing user we
+        send an email to them with a link containing a password reset token with
+        a limited lifespan. The user can follow the link and set a new password.
+        """
         user = model.User.lookup(NS.payload['email'])
 
         # don't let the requester know the email address is not valid to
@@ -204,12 +247,13 @@ class ResetPasswordRequest(Resource):
         try:
             user_auth.generate_reset_token()
         except model.JaxMBADatabaseException:
-            abort(400, 'unable to create password reset token')
-
+            abort(500, 'unable to create password reset token')
 
         # generate URL for UI page to complete reset
         url = urllib.parse.urljoin(
-            NS.payload['url'] + '/', f"{user.id}/{user_auth.password_reset_token}")
+            NS.payload['url'] + '/',
+            f"{user.id}/{user_auth.password_reset_token}"
+        )
         # send invitation
         email_notifier = EmailNotifier(
             smtp_server=flask.current_app.config['SMTP'],

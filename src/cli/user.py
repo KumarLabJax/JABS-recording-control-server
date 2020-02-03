@@ -26,7 +26,7 @@ class CreateAdmin(Command):
             return 1
         else:
             try:
-                SimpleAuth.create_admin(email, password)
+                SimpleAuth.create_user(email, password, admin=True)
             except JaxMBADatabaseException as e:
                 print(e)
                 return 1

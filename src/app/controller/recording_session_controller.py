@@ -3,6 +3,7 @@ controller for interacting with recording sessions through the API
 """
 
 from flask_restplus import Resource, Namespace, reqparse, abort, inputs
+from flask_jwt_extended import jwt_required
 
 import src.app.model as model
 from .schemas import RECORDING_SESSION_SCHEMA, DEVICE_SESSION_STATUS, \
@@ -31,6 +32,8 @@ class RecordingSession(Resource):
         help=("If True get archived recording sessions.")
     )
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.marshal_with(RECORDING_SESSION_SCHEMA, as_list=True)
     @NS.expect(get_parser)
     def get(self):
@@ -47,6 +50,8 @@ class RecordingSession(Resource):
         else:
             return model.RecordingSession.get()
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.expect(NEW_RECORDING_SESSION_SCHEMA, validate=True)
     @NS.marshal_with(RECORDING_SESSION_SCHEMA)
     def post(self):
@@ -80,6 +85,8 @@ class RecordingSession(Resource):
 class RecordingSessionByID(Resource):
     """ Endpoint for interacting with a recording session specified by id """
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "Recording session not found")
     @NS.marshal_with(RECORDING_SESSION_SCHEMA)
     def get(self, session_id):
@@ -94,6 +101,8 @@ class RecordingSessionByID(Resource):
         help=("Also archive the recording session.")
     )
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(204, "session archived")
     @NS.response(404, "recording session not found")
     @NS.expect(delete_parser)
@@ -122,6 +131,8 @@ class RecordingSessionByID(Resource):
 class RecordingSessionDeviceStatus(Resource):
     """ Endpoint for getting a device's status for a session """
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "recording session or device not found")
     @NS.marshal_with(DEVICE_SESSION_STATUS)
     def get(self, session_id, device_id):
@@ -140,6 +151,8 @@ class RecordingSessionDeviceStatus(Resource):
 
         return model.DeviceRecordingStatus.get(device, session)
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "recording session or device not found")
     @NS.response(204, "success")
     def delete(self, session_id, device_id):

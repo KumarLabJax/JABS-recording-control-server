@@ -15,11 +15,6 @@ TOKEN_MODEL = NS.model('tokens', {
     'access': fields.String(),
 })
 
-TOKEN_FLOW_MODEL = NS.model('token_flow', {
-    'auth_uri': fields.String(skip_none=True),
-    'tokens': fields.Nested(TOKEN_MODEL, skip_none=True)
-})
-
 CREDENTIAL_MODEL = NS.model('credentials', {
     'email_address': fields.String(required=True),
     'password': fields.String(required=True, format='password')
@@ -51,9 +46,6 @@ class UserLogin(Resource):
         }
 
         access_token = create_access_token(identity=identity)
-        # Here the refresh token uses an identity that is identical to the access.
-        # Often we will only use the minimum information we would need to fetch
-        # the users identity when creating a new access token
         refresh_token = create_refresh_token(identity=identity)
 
         return {
@@ -73,11 +65,6 @@ class UserRefresh(Resource):
         """ Create a new access token from a refresh token """
 
         identity = get_jwt_identity()
-
-        # If the refresh token identity is not identical to the access token identity
-        # (see /login route above), we need to first get the user's full identity
-        # before creating a new access token.
-        # e.g. full_identity = example_get_full_id(user_id=identity['uid'])
 
         return {
             'access': create_access_token(identity=identity)
