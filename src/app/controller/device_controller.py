@@ -2,13 +2,16 @@
 controller for interacting with devices through the API
 """
 import dateutil.parser
+import json
+
+from flask_jwt_extended import jwt_required
 from flask_restplus import Resource, Namespace, abort
+
 from .schemas import HEARTBEAT_SCHEMA, DEVICE_SCHEMA, SYSINFO_SCHEMA, \
     SENSOR_STATUS, CAMERA_STATUS, COMMAND_SCHEMA, \
     add_models_to_namespace
-import json
 import src.app.model as model
-from src.utils.exceptions import LTMSControlServiceException
+from src.utils.exceptions import JaxMBAControlServiceException
 from src.utils.logging import get_module_logger
 from .utils.device_command import get_device_response
 
@@ -57,7 +60,7 @@ class DeviceHeartbeat(Resource):
                 release=data['system_info']['release'],
                 location=data.get('location')
             )
-        except LTMSControlServiceException as err:
+        except JaxMBAControlServiceException as err:
             abort(400, f"error processing heartbeat {err}")
 
         return get_device_response(device, data)
@@ -67,6 +70,8 @@ class DeviceHeartbeat(Resource):
 class DeviceList(Resource):
     """ Endpoint for interacting with lists of Devices """
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.marshal_with(DEVICE_SCHEMA, as_list=True)
     def get(self):
         """
@@ -80,6 +85,8 @@ class DeviceList(Resource):
 class ByID(Resource):
     """ endpoint for getting a specific device by ID """
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "Device not found")
     @NS.marshal_with(DEVICE_SCHEMA)
     def get(self, device_id):
@@ -92,6 +99,8 @@ class ByID(Resource):
 class ByName(Resource):
     """ endpoint for getting a specific device by a unique name """
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "Device not found")
     @NS.marshal_with(DEVICE_SCHEMA)
     def get(self, name):
@@ -104,6 +113,8 @@ class ByName(Resource):
 class LiveStream(Resource):
     """endpoint for requesting live stream from device"""
 
+    @jwt_required
+    @NS.doc(security='JWT Access')
     @NS.response(404, "Device not found")
     @NS.response(500, "Unable to request live stream (internal server error)")
     @NS.response(503, "Live stream currently unavailable for device")
@@ -128,7 +139,7 @@ class LiveStream(Resource):
 
         try:
             device.request_live_stream()
-        except model.LTMSDatabaseException as e:
+        except model.JaxMBADatabaseException as e:
             abort(500, str(e))
-        except LTMSControlServiceException:
+        except JaxMBAControlServiceException:
             abort(503, f"Live stream currently unavailable for {device.name}")

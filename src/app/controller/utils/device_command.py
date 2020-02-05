@@ -7,7 +7,7 @@ import json
 from flask_restplus import abort
 
 import src.app.model as model
-from src.utils.exceptions import LTMSControlServiceException
+from src.utils.exceptions import JaxMBAControlServiceException
 from src.utils.logging import get_module_logger
 
 LOGGER = get_module_logger()
@@ -38,7 +38,7 @@ def get_device_response(device, client_data):
                          f"DeviceRecordingStatus for session {device.session_id}")
             try:
                 device.clear_session()
-            except LTMSControlServiceException:
+            except JaxMBAControlServiceException:
                 # for now pass, it should try again next heartbeat
                 pass
             return '', 204
@@ -64,7 +64,7 @@ def get_device_response(device, client_data):
                 # new session
                 try:
                     device.clear_session()
-                except LTMSControlServiceException:
+                except JaxMBAControlServiceException:
                     # for now pass, it should try again next heartbeat
                     pass
                 return '', 204
@@ -77,7 +77,7 @@ def get_device_response(device, client_data):
                         "device unexpectedly left recording session"
                     )
                     device.clear_session()
-                except LTMSControlServiceException:
+                except JaxMBAControlServiceException:
                     # couldn't update the status for some reason
                     # don't treat this as fatal, we'll try again next time
                     pass
@@ -119,7 +119,7 @@ def get_device_response(device, client_data):
                     device.clear_session()
                     return {'command_name': Command.COMPLETE.value}, 200
 
-                except LTMSControlServiceException:
+                except JaxMBAControlServiceException:
                     # couldn't update the device for some reason
                     # don't treat this as fatal. we will try again next time
                     # device sends us a status update
@@ -135,7 +135,7 @@ def get_device_response(device, client_data):
                 try:
                     device_session_status.update_recording_time(
                         client_data['sensor_status']['camera']['duration'])
-                except LTMSControlServiceException:
+                except JaxMBAControlServiceException:
                     # couldn't update the device time for some reason
                     # don't treat this as fatal.
                     pass
@@ -147,13 +147,13 @@ def get_device_response(device, client_data):
                 try:
                     device.join_session(
                         device_session_status.session)
-                except LTMSControlServiceException as err:
+                except JaxMBAControlServiceException as err:
                     abort(400, f"error joining session {err}")
 
                 try:
                     device_session_status.update_recording_time(
                         client_data['sensor_status']['camera']['duration'])
-                except LTMSControlServiceException:
+                except JaxMBAControlServiceException:
                     # couldn't update the device time for some reason
                     # don't treat this as fatal.
                     pass

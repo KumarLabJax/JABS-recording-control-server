@@ -9,8 +9,8 @@ import json
 
 from . import BASE, MA, SESSION
 from .utils.unique import UniqueMixin
-from . import LTMSDatabaseException
-from src.utils.exceptions import LTMSControlServiceException
+from . import JaxMBADatabaseException
+from src.utils.exceptions import JaxMBAControlServiceException
 from src.utils.logging import get_module_logger
 
 from src.app import model
@@ -150,7 +150,7 @@ class Device(UniqueMixin, BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException(f"Unable to update device {name}")
+            raise JaxMBADatabaseException(f"Unable to update device {name}")
 
         return device
 
@@ -161,7 +161,7 @@ class Device(UniqueMixin, BASE):
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("Unable to clear session_id")
+            raise JaxMBADatabaseException("Unable to clear session_id")
 
     def join_session(self, session):
         """
@@ -184,9 +184,9 @@ class Device(UniqueMixin, BASE):
                 SESSION.commit()
             except SQLAlchemyError:
                 SESSION.rollback()
-                raise LTMSDatabaseException("Unable to join session")
+                raise JaxMBADatabaseException("Unable to join session")
         else:
-            raise LTMSControlServiceException(
+            raise JaxMBAControlServiceException(
                 "device already part of another session")
 
     def request_live_stream(self):
@@ -194,14 +194,14 @@ class Device(UniqueMixin, BASE):
         # currently we can only enable live streaming if the device is recording
         camera_status = json.loads(self.sensor_status).get('camera')
         if not camera_status or not camera_status.get('recording'):
-            raise LTMSControlServiceException("device camera is not active")
+            raise JaxMBAControlServiceException("device camera is not active")
 
         self.last_stream_request = Device.__add_tz(datetime.utcnow())
         try:
             SESSION.commit()
         except SQLAlchemyError:
             SESSION.rollback()
-            raise LTMSDatabaseException("Unable to request live stream")
+            raise JaxMBADatabaseException("Unable to request live stream")
 
     def is_stream_active(self):
         try:

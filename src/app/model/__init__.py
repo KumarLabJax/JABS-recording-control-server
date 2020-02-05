@@ -1,15 +1,12 @@
 """
 The root of our sqlalchemy code
 """
-
-
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from flask_marshmallow import Marshmallow
 
-from src.utils.exceptions import LTMSControlServiceException
+from src.utils.exceptions import JaxMBAControlServiceException
 
 MA = Marshmallow()
 
@@ -20,14 +17,19 @@ SESSION = scoped_session(SESSION_FACTORY)
 BASE.query = SESSION.query_property()
 
 
-class LTMSDatabaseException(LTMSControlServiceException):
+class JaxMBADatabaseException(JaxMBAControlServiceException):
     """ Base exception class for exceptions defined in the model module """
 
+
+class PasswordFormatException(JaxMBAControlServiceException):
+    """password doesn't meet our requirements"""
 
 # this needs to be imported after the BASE/SESSION and exceptions are setup
 # pylint: disable=wrong-import-position
 from .device_model import Device
 from .recording_session_model import RecordingSession, DeviceRecordingStatus
+from .user_model import User
+from .simple_auth_model import SimpleAuth, MIN_PASSWORD_LEN
 # pylint: enable=wrong-import-position
 
 

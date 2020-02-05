@@ -1,5 +1,5 @@
 """
-Utilities to help manage the 'ltm_control_service.config' configuration file
+Utilities to help manage the 'jax-mba-service.config' configuration file
 """
 import os
 import secrets
@@ -7,9 +7,7 @@ import configparser
 
 from src.utils.logging import get_module_logger
 
-CONFIG_FILE_NAME = 'ltm_control_service.config'
-
-EXAMPLE_CELERY_URI = 'amqp://<USER>:<PASS>@<BROKER_URL>:<PORT>/<VHOST>'
+CONFIG_FILE_NAME = 'jax-mba-service.config'
 
 LOGGER = get_module_logger()
 
@@ -23,10 +21,10 @@ def generate_secrets():
     config_dict.read(CONFIG_FILE_NAME)
 
     if not config_dict.get('MAIN', 'FLASK_SECRET'):
-        LOGGER.warning("Flask secret not found, GENERATING NEW SECRET")
+        LOGGER.warning("GENERATING NEW FLASK SECRET")
         config_dict['MAIN']['FLASK_SECRET'] = secrets.token_hex(32)
     if not config_dict.get('MAIN', 'JWT_SECRET'):
-        LOGGER.warning("JWT secret not found, GENERATING NEW SECRET")
+        LOGGER.warning("GENERATING NEW JWT SECRET")
         config_dict['MAIN']['JWT_SECRET'] = secrets.token_hex(32)
 
     with open(CONFIG_FILE_NAME, 'w') as configfile:
@@ -40,33 +38,19 @@ def create_empty_config():
     """
     # TODO: Include user prompts
     config_dict = configparser.ConfigParser(allow_no_value=True)
-    config_dict['MAIN'] = {'FLASK_SECRET': '', 'JWT_SECRET': '', 'ADMIN_NAME': ''}
-    config_dict['CELERY'] = {'CELERY_BROKER_URL': EXAMPLE_CELERY_URI,
-                             'CELERY_RESULT_BACKEND': EXAMPLE_CELERY_URI}
-    config_dict['LDAP'] = {
-        'PASSWORD': '',
-        'USER': '',
-        'HOST': 'ldaps://ldaps.jax.org:636',
-        'BASE': 'DC=jax,DC=org',
-        'USER_DOMAIN': 'jax.org',
-        'SEARCH_FILTER': '(&(sAMAccountName={})(memberOf=CN={},OU=Unix,OU=Groups,DC=jax,DC=org))',
-        'SEARCH_TIMEOUT': 10
+
+    config_dict['MAIN'] = {
+        'FLASK_SECRET': '',
+        'JWT_SECRET': '',
+        'DOWN_DEVICE_THRESHOLD': 60,
+        'STREAM_KEEP_ALIVE': 10
     }
 
-    test_dir = 'test' + os.path.sep +'ldap' + os.path.sep
-    config_dict['LDAP3'] = {
-        'PASSWORD': 'pa55word', # this is a test password for the mock server
-        'USER': 'testuser',     # this is a test username for the mock server
-        'HOST': 'ldaps://ldaps.jax.org:636',
-        'BASE': 'DC=jax,DC=org',
-        'USER_DOMAIN': 'jax.org',
-        'SEARCH_FILTER': '(&(sAMAccountName={})(memberOf=CN={},OU=Unix,OU=Groups,DC=jax,DC=org))',
-        'SEARCH_TIMEOUT': 10,
-        'STRATEGY': 'SYNC',    # set to MOCK strategy in order for the tests to pass
-        'MOCK_ENTRIES': test_dir + 'mock_ldap_entries.json',
-        'MOCK_INFO': test_dir + 'mock_ldap_info.json',
-        'MOCK_SCHEMA': test_dir + 'mock_ldap_schema.json'
+    config_dict['EMAIL'] = {
+        'REPLY_TO': '',
+        'SMTP': ''
     }
+
     config_dict['DATABASE'] = {
         'DIALECT': 'postgres',
         'USERNAME': '',
