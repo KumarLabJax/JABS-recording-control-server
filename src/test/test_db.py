@@ -136,7 +136,20 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
             free_disk=1258291
         )
 
-        self.session.bulk_save_objects([device1, device2])
+        device3 = model.Device(
+            name="TEST-DEVICE3",
+            release="fake device",
+            last_update=datetime.utcnow(),
+            uptime=128324,
+            total_ram=8388608,
+            free_ram=7759462,
+            load=0.66,
+            sensor_status=json.dumps(sensor_status),
+            total_disk=2000000,
+            free_disk=1258291
+        )
+
+        self.session.bulk_save_objects([device1, device2, device3])
         self.session.commit()
 
     def tearDown(self):
@@ -195,6 +208,41 @@ class SqlalchemyRecordingSessionModelTest(BaseDBTestCase):
 
         self.assertEqual(new_session.device_statuses[0].status,
                          model.DeviceRecordingStatus.Status.RECORDING)
+
+    def test_session_device_order(self):
+        """Test recording session device status sorting"""
+        device1 = model.Device.get_by_name("TEST-DEVICE1")
+        device2 = model.Device.get_by_name("TEST-DEVICE2")
+        device3 = model.Device.get_by_name("TEST-DEVICE3")
+
+        device_spec = [
+            {
+                'device_id': device1.id,
+                'filename_prefix': "test_prefix"
+            },
+            {
+                'device_id': device2.id,
+                'filename_prefix': "test_prefix2"
+            },
+            {
+                'device_id': device3.id,
+                'filename_prefix': "test_prefix3"
+            }
+        ]
+
+        new_session = model.RecordingSession.create(device_spec, duration=600,
+                                                    name="test session",
+                                                    fragment_hourly=True,
+                                                    target_fps=30,
+                                                    apply_filter=True)
+
+        # devices should be sorted by name in device_statusess
+        self.assertEqual(new_session.device_statuses[0].device_name,
+                         "TEST-DEVICE1")
+        self.assertEqual(new_session.device_statuses[1].device_name,
+                         "TEST-DEVICE2")
+        self.assertEqual(new_session.device_statuses[2].device_name,
+                         "TEST-DEVICE3")
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Enum, \
-    TIMESTAMP, func, JSON, ForeignKey, Boolean, Text, or_
+    TIMESTAMP, func, ForeignKey, Boolean, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, deferred
 import enum
 
 from . import BASE, MA, SESSION
@@ -63,7 +63,8 @@ class RecordingSession(BASE):
     devices = relationship("Device", backref="recording_session")
     device_statuses = relationship("DeviceRecordingStatus",
                                    back_populates="session",
-                                   cascade="all, delete, delete-orphan")
+                                   cascade="all, delete, delete-orphan",
+                                   order_by="DeviceRecordingStatus.device_name")
 
     def archive(self):
         self.archived = True
@@ -191,7 +192,9 @@ class DeviceRecordingStatus(BASE):
 
     # device id and session id form a composite primary key
     device_id = Column(Integer, ForeignKey('device.id'), primary_key=True)
-    session_id = Column(Integer, ForeignKey('recording_session.id', ondelete='CASCADE'), primary_key=True)
+    session_id = Column(Integer,
+                        ForeignKey('recording_session.id', ondelete='CASCADE'),
+                        primary_key=True)
 
     # device's file prefix for this recording session
     file_prefix = Column(String)
@@ -207,7 +210,11 @@ class DeviceRecordingStatus(BASE):
     message = Column(String)
 
     device = relationship("Device")
-    session = relationship("RecordingSession", back_populates="device_statuses")
+    session = relationship("RecordingSession",
+                           back_populates="device_statuses")
+
+    # so the RecordingSession can sort DeviceRecordingSessionStatus by name
+    device_name = deferred(select([Device.name]).where(Device.id == device_id))
 
     def update_recording_time(self, duration):
         self.recording_time = duration
