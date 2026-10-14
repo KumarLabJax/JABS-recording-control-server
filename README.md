@@ -1,5 +1,15 @@
 # JAX Mouse Behavior Analysis Control Service
 
+> **Disclaimer: Proof of concept only. Not actively developed.**
+> This code is a proof of concept and is not intended for production use. It is
+> not under active development. Communication between the recording client and
+> this server is **not** secured: it is not authenticated, authorized, or
+> otherwise protected. Do not deploy it on untrusted networks or use it to
+> handle sensitive data.
+>
+> A production-ready system with a cloud-hosted control service is currently
+> under development.
+
 Flask Service to coordinate the centralized control of multiple JAX Mouse 
 Behavior Analysis enclosures.
 
